@@ -73,6 +73,28 @@ venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
+## Configuração do Token do Hugging Face
+
+O robô usa modelos de IA do Hugging Face para ranking semântico. Para evitar avisos de autenticação e obter taxas de download mais altas:
+
+1. Crie uma conta gratuita em [Hugging Face](https://huggingface.co/join)
+2. Acesse [Configurações de Tokens](https://huggingface.co/settings/tokens)
+3. Crie um novo token (tipo "Read")
+4. Defina a variável de ambiente:
+
+```bash
+# Windows (PowerShell)
+$env:HF_TOKEN = "seu_token_aqui"
+
+# Windows (Command Prompt)
+set HF_TOKEN=seu_token_aqui
+
+# Linux/Mac
+export HF_TOKEN=seu_token_aqui
+```
+
+Ou adicione permanentemente ao seu sistema operacional.
+
 ## Uso
 
 Execute o robô pelo terminal:
