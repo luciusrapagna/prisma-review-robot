@@ -99,7 +99,7 @@ def baixar_detalhes_pubmed(pmids):
         artigos.append({
             "Base": "PubMed",
             "PMID": pmid,
-            "Título": titulo,
+            "Titulo": titulo,
             "Autores": autores,
             "Ano": ano,
             "Revista": journal,

@@ -1,59 +1,59 @@
 # PRISMA Review Robot
 
-Robô em Python para apoiar revisões bibliográficas do tipo PRISMA, revisão sistemática, revisão integrativa, revisão narrativa e revisão de escopo.
+Robo em Python para apoiar revisoes bibliograficas do tipo PRISMA, revisao sistematica, revisao integrativa, revisao narrativa e revisao de escopo.
 
 ## Objetivo
 
-Automatizar etapas iniciais de uma revisão bibliográfica científica, permitindo que o usuário informe parâmetros de busca, descritores, bases de dados, período de publicação e critérios de inclusão/exclusão.
+Automatizar etapas iniciais de uma revisao bibliografica cientifica, permitindo que o usuario informe parametros de busca, descritores, bases de dados, periodo de publicacao e criterios de inclusao/exclusao.
 
 ## Funcionalidades previstas
 
-- Inserção de parâmetros da revisão
-- Busca bibliográfica automatizada
-- Organização dos artigos encontrados
-- Remoção de duplicatas
-- Triagem inicial por título e resumo
-- Geração de tabela em Excel
-- Geração de arquivo de referências para Zotero
-- Geração de resumo metodológico
-- Geração de descrição para figura PRISMA
-- Organização dos resultados em pastas
-- Exportação dos dados para uso em artigos científicos
+- Insercao de parametros da revisao
+- Busca bibliografica automatizada
+- Organizacao dos artigos encontrados
+- Remocao de duplicatas
+- Triagem inicial por titulo e resumo
+- Geracao de tabela em Excel
+- Geracao de arquivo de referencias para Zotero
+- Geracao de resumo metodologico
+- Geracao de descricao para figura PRISMA
+- Organizacao dos resultados em pastas
+- Exportacao dos dados para uso em artigos cientificos
 
 ## Estrutura do projeto
 
 ```text
 PRISMA-Review-Robot/
-│
-├── src/
-│   ├── main.py
-│   ├── config.py
-│   ├── buscador.py
-│   ├── triagem.py
-│   ├── relatorios.py
-│   ├── referencias.py
-│   └── figuras.py
-│
-├── data/
-│   ├── raw/
-│   └── processed/
-│
-├── outputs/
-│   ├── tables/
-│   ├── figures/
-│   └── references/
-│
-├── docs-reference/
-├── prompts/
-├── logs/
-├── requirements.txt
-├── .gitignore
-└── README.md
+
+ src/
+    main.py
+    config.py
+    buscador.py
+    triagem.py
+    relatorios.py
+    referencias.py
+    figuras.py
+
+ data/
+    raw/
+    processed/
+
+ outputs/
+    tables/
+    figures/
+    references/
+
+ docs-reference/
+ prompts/
+ logs/
+ requirements.txt
+ .gitignore
+ README.md
 ```
 
-## Instalação
+## Instalacao
 
-1. Clone o repositório:
+1. Clone o repositorio:
 
 ```bash
 git clone https://github.com/luciusrapagna/prisma-review-robot.git
@@ -67,20 +67,20 @@ python -m venv venv
 venv\Scripts\activate
 ```
 
-3. Instale as dependências:
+3. Instale as dependencias:
 
 ```bash
 pip install -r requirements.txt
 ```
 
-## Configuração do Token do Hugging Face
+## Configuracao do Token do Hugging Face
 
-O robô usa modelos de IA do Hugging Face para ranking semântico. Para evitar avisos de autenticação e obter taxas de download mais altas:
+O robo usa modelos de IA do Hugging Face para ranking semantico. Para evitar avisos de autenticacao e obter taxas de download mais altas:
 
 1. Crie uma conta gratuita em [Hugging Face](https://huggingface.co/join)
-2. Acesse [Configurações de Tokens](https://huggingface.co/settings/tokens)
+2. Acesse [Configuracoes de Tokens](https://huggingface.co/settings/tokens)
 3. Crie um novo token (tipo "Read")
-4. Defina a variável de ambiente:
+4. Defina a variavel de ambiente:
 
 ```bash
 # Windows (PowerShell)
@@ -97,27 +97,27 @@ Ou adicione permanentemente ao seu sistema operacional.
 
 ## Uso
 
-Execute o robô pelo terminal:
+Execute o robo pelo terminal:
 
 ```bash
 python src\main.py
 ```
 
-O programa irá solicitar:
+O programa ira solicitar:
 
-- Tema da revisão
+- Tema da revisao
 - Ano inicial e ano final
 - Busca booleana para PubMed
-- Número máximo de artigos
-- Tipo de revisão desejada
+- Numero maximo de artigos
+- Tipo de revisao desejada
 
-Ao final, os resultados serão salvos em:
+Ao final, os resultados serao salvos em:
 
 - `outputs/tables/parametros_revisao.xlsx`
 - `outputs/figures/descricao_figura_prisma.txt`
 - `outputs/references/referencias_pubmed.ris`
 
-## Dependências principais
+## Dependencias principais
 
 O projeto usa as seguintes bibliotecas Python:
 
@@ -128,12 +128,12 @@ O projeto usa as seguintes bibliotecas Python:
 
 Para a lista completa, consulte `requirements.txt`.
 
-## Observações
+## Observacoes
 
-- A implementação atual realiza busca no PubMed via `src/buscadores/pubmed.py`.
-- A saída pode ser usada como base para gerar tabelas, gráficos e fluxogramas PRISMA.
-- Você pode adaptar o robô para outras bases de dados ou formatos de exportação.
+- A implementacao atual realiza busca no PubMed via `src/buscadores/pubmed.py`.
+- A saida pode ser usada como base para gerar tabelas, graficos e fluxogramas PRISMA.
+- Voce pode adaptar o robo para outras bases de dados ou formatos de exportacao.
 
-## Contribuições
+## Contribuicoes
 
-Contribuições são bem-vindas. Abra uma issue ou envie um pull request com sugestões de melhorias.
+Contribuicoes sao bem-vindas. Abra uma issue ou envie um pull request com sugestoes de melhorias.

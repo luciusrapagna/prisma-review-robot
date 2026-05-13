@@ -1,4 +1,4 @@
-﻿from datetime import datetime
+from datetime import datetime
 import os
 import pandas as pd
 
@@ -36,23 +36,23 @@ def coletar_parametros():
     print("        PRISMA REVIEW ROBOT")
     print("========================================\n")
 
-    tema = input("Digite o tema da revisÃ£o: ")
+    tema = input("Digite o tema da revisAo: ")
     ano_inicial = input("Ano inicial: ")
     ano_final = input("Ano final: ")
 
     print("\nExemplo de busca:")
-    print('("medical education" OR "educaÃ§Ã£o mÃ©dica") AND ("artificial intelligence" OR "inteligÃªncia artificial")')
+    print('("medical education" OR "educaAAo mAdica") AND ("artificial intelligence" OR "inteligAncia artificial")')
 
-    query = input("\nDigite a estratÃ©gia de busca booleana: ")
+    query = input("\nDigite a estratAgia de busca booleana: ")
 
-    max_artigos = input("NÃºmero mÃ¡ximo de artigos por base: ")
+    max_artigos = input("NAmero mAximo de artigos por base: ")
 
     if not max_artigos.strip():
         max_artigos = 50
     else:
         max_artigos = int(max_artigos)
 
-    tipo_revisao = input("Tipo de revisÃ£o desejada: ")
+    tipo_revisao = input("Tipo de revisAo desejada: ")
 
     parametros = {
         "tema": tema,
@@ -70,17 +70,17 @@ def coletar_parametros():
 
 def perguntar_similaridade():
     print("\n========================================")
-    print("FILTRO DE SIMILARIDADE SEMÃ‚NTICA")
+    print("FILTRO DE SIMILARIDADE SEMANTICA")
     print("========================================")
 
-    print("\nSugestÃµes:")
+    print("\nSugestAes:")
     print("0.40 = muito amplo")
     print("0.50 = amplo")
     print("0.60 = moderado")
     print("0.70 = rigoroso")
     print("0.80 = muito rigoroso")
 
-    valor = input("\nDigite a similaridade mÃ­nima desejada: ")
+    valor = input("\nDigite a similaridade mAnima desejada: ")
 
     if not valor.strip():
         return 0.30
@@ -89,17 +89,17 @@ def perguntar_similaridade():
         valor = float(valor.replace(",", "."))
 
         if valor < 0:
-            print("Valor invÃ¡lido. Usando 0.30.")
+            print("Valor invAlido. Usando 0.30.")
             return 0.30
 
         if valor > 1:
-            print("Valor invÃ¡lido. Usando 0.30.")
+            print("Valor invAlido. Usando 0.30.")
             return 0.30
 
         return valor
 
     except ValueError:
-        print("Valor invÃ¡lido. Usando 0.30.")
+        print("Valor invAlido. Usando 0.30.")
         return 0.30
 
 
@@ -109,13 +109,13 @@ def gerar_tabela_parametros(parametros, similaridade_minima):
             "Tema",
             "Ano inicial",
             "Ano final",
-            "EstratÃ©gia de busca",
-            "MÃ¡ximo de artigos por base",
-            "Tipo de revisÃ£o",
-            "Similaridade mÃ­nima",
-            "Data de execuÃ§Ã£o"
+            "EstratAgia de busca",
+            "MAximo de artigos por base",
+            "Tipo de revisAo",
+            "Similaridade mAnima",
+            "Data de execuAAo"
         ],
-        "InformaÃ§Ã£o": [
+        "InformaAAo": [
             parametros["tema"],
             parametros["ano_inicial"],
             parametros["ano_final"],
@@ -132,7 +132,7 @@ def gerar_tabela_parametros(parametros, similaridade_minima):
     caminho = "outputs/tables/parametros_revisao.xlsx"
     df.to_excel(caminho, index=False)
 
-    print(f"\nTabela de parÃ¢metros gerada em: {caminho}")
+    print(f"\nTabela de parAmetros gerada em: {caminho}")
 
 
 def salvar_tabela_consolidada(artigos):
@@ -142,7 +142,7 @@ def salvar_tabela_consolidada(artigos):
         df = pd.DataFrame(columns=[
             "Base",
             "PMID",
-            "TÃ­tulo",
+            "TAtulo",
             "Autores",
             "Ano",
             "Revista",
@@ -173,17 +173,17 @@ def gerar_descricao_figura_prisma(
     excluidos_por_similaridade = total_sem_duplicatas - total_apos_similaridade
 
     texto = f"""
-DescriÃ§Ã£o sugerida para figura PRISMA:
+DescriAAo sugerida para figura PRISMA:
 
-Fluxograma representando o processo de identificaÃ§Ã£o, triagem, elegibilidade e inclusÃ£o dos estudos da revisÃ£o intitulada "{parametros['tema']}".
+Fluxograma representando o processo de identificaAAo, triagem, elegibilidade e inclusAo dos estudos da revisAo intitulada "{parametros['tema']}".
 
-A busca bibliogrÃ¡fica foi realizada nas bases PubMed, Crossref, SciELO e LILACS/BVS, considerando publicaÃ§Ãµes entre {parametros['ano_inicial']} e {parametros['ano_final']}.
+A busca bibliogrAfica foi realizada nas bases PubMed, Crossref, SciELO e LILACS/BVS, considerando publicaAAes entre {parametros['ano_inicial']} e {parametros['ano_final']}.
 
-A estratÃ©gia de busca utilizada foi:
+A estratAgia de busca utilizada foi:
 
 {parametros['query_geral']}
 
-Na etapa de identificaÃ§Ã£o, foram recuperados:
+Na etapa de identificaAAo, foram recuperados:
 - PubMed: {total_pubmed} registros;
 - Crossref: {total_crossref} registros;
 - SciELO: {total_scielo} registros;
@@ -191,25 +191,25 @@ Na etapa de identificaÃ§Ã£o, foram recuperados:
 
 O total inicial identificado foi de {total_identificados} registros.
 
-ApÃ³s a remoÃ§Ã£o automÃ¡tica de duplicatas, permaneceram {total_sem_duplicatas} registros Ãºnicos. Foram removidos {duplicatas} registros duplicados.
+ApAs a remoAAo automAtica de duplicatas, permaneceram {total_sem_duplicatas} registros Anicos. Foram removidos {duplicatas} registros duplicados.
 
-ApÃ³s a triagem semÃ¢ntica automatizada, utilizando similaridade mÃ­nima de {similaridade_minima}, permaneceram {total_apos_similaridade} registros. Foram excluÃ­dos {excluidos_por_similaridade} registros por baixa similaridade com o tema da revisÃ£o.
+ApAs a triagem semAntica automatizada, utilizando similaridade mAnima de {similaridade_minima}, permaneceram {total_apos_similaridade} registros. Foram excluAdos {excluidos_por_similaridade} registros por baixa similaridade com o tema da revisAo.
 
-A figura PRISMA deverÃ¡ apresentar:
+A figura PRISMA deverA apresentar:
 1. registros identificados em cada base;
 2. total de registros identificados;
 3. registros removidos por duplicidade;
-4. registros triados por similaridade semÃ¢ntica;
-5. registros excluÃ­dos por baixa similaridade;
-6. registros mantidos para leitura de tÃ­tulo e resumo;
+4. registros triados por similaridade semAntica;
+5. registros excluAdos por baixa similaridade;
+6. registros mantidos para leitura de tAtulo e resumo;
 7. textos completos avaliados para elegibilidade;
-8. textos completos excluÃ­dos com justificativa;
-9. estudos finais incluÃ­dos na sÃ­ntese qualitativa e/ou quantitativa.
+8. textos completos excluAdos com justificativa;
+9. estudos finais incluAdos na sAntese qualitativa e/ou quantitativa.
 
-SugestÃ£o visual:
-Construir um fluxograma vertical em quatro etapas principais: IdentificaÃ§Ã£o, Triagem, Elegibilidade e InclusÃ£o. Cada base de dados pode aparecer em uma caixa lateral na etapa de identificaÃ§Ã£o, convergindo para o total de registros identificados. Em seguida, inserir a caixa de remoÃ§Ã£o de duplicatas, seguida da triagem semÃ¢ntica, avaliaÃ§Ã£o de elegibilidade e inclusÃ£o final.
+SugestAo visual:
+Construir um fluxograma vertical em quatro etapas principais: IdentificaAAo, Triagem, Elegibilidade e InclusAo. Cada base de dados pode aparecer em uma caixa lateral na etapa de identificaAAo, convergindo para o total de registros identificados. Em seguida, inserir a caixa de remoAAo de duplicatas, seguida da triagem semAntica, avaliaAAo de elegibilidade e inclusAo final.
 
-Essa descriÃ§Ã£o pode ser utilizada como base para criaÃ§Ã£o da figura no PowerPoint, Canva, CorelDRAW, BioRender ou outro software grÃ¡fico.
+Essa descriAAo pode ser utilizada como base para criaAAo da figura no PowerPoint, Canva, CorelDRAW, BioRender ou outro software grAfico.
 """
 
     caminho = "outputs/figures/descricao_figura_prisma.txt"
@@ -217,7 +217,7 @@ Essa descriÃ§Ã£o pode ser utilizada como base para criaÃ§Ã£o da figura n
     with open(caminho, "w", encoding="utf-8") as arquivo:
         arquivo.write(texto)
 
-    print(f"\nDescriÃ§Ã£o da figura PRISMA gerada em: {caminho}")
+    print(f"\nDescriAAo da figura PRISMA gerada em: {caminho}")
 
 
 def gerar_ris_zotero(artigos):
@@ -226,7 +226,7 @@ def gerar_ris_zotero(artigos):
     with open(caminho, "w", encoding="utf-8") as arquivo:
         for artigo in artigos:
             arquivo.write("TY  - JOUR\n")
-            arquivo.write(f"TI  - {artigo.get('TÃ­tulo', '')}\n")
+            arquivo.write(f"TI  - {artigo.get('TAtulo', '')}\n")
             arquivo.write(f"PY  - {artigo.get('Ano', '')}\n")
             arquivo.write(f"JO  - {artigo.get('Revista', '')}\n")
             arquivo.write(f"DO  - {artigo.get('DOI', '')}\n")
@@ -348,16 +348,16 @@ def main():
     gerar_ris_zotero(artigos_rankeados)
 
     print("\n========================================")
-    print("ROBÃ” EXECUTADO COM SUCESSO!")
+    print("ROBA EXECUTADO COM SUCESSO!")
     print("========================================")
     print(f"PubMed: {total_pubmed} registros")
     print(f"Crossref: {total_crossref} registros")
     print(f"SciELO: {total_scielo} registros")
     print(f"LILACS/BVS: {total_lilacs} registros")
     print(f"Total identificado: {total_identificados} registros")
-    print(f"Total apÃ³s duplicatas: {total_sem_duplicatas} registros")
-    print(f"Total apÃ³s similaridade: {total_apos_similaridade} registros")
-    print(f"Similaridade mÃ­nima usada: {similaridade_minima}")
+    print(f"Total apAs duplicatas: {total_sem_duplicatas} registros")
+    print(f"Total apAs similaridade: {total_apos_similaridade} registros")
+    print(f"Similaridade mAnima usada: {similaridade_minima}")
 
     print("\nArquivos gerados em:")
     print("outputs/tables")

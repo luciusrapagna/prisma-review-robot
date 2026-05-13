@@ -15,8 +15,8 @@ def normalizar_texto(texto):
 def remover_duplicatas(artigos):
     """Remove duplicatas de uma lista de artigos.
 
-    A função usa DOI preferencialmente. Se DOI estiver ausente,
-    usa título normalizado, PMID ou link como chave de detecção.
+    A funcao usa DOI preferencialmente. Se DOI estiver ausente,
+    usa titulo normalizado, PMID ou link como chave de deteccao.
     """
     chaves_vistas = set()
     artigos_unicos = []
@@ -26,7 +26,7 @@ def remover_duplicatas(artigos):
         if doi:
             chave = f"doi:{doi}"
         else:
-            titulo = normalizar_texto(artigo.get("Título", "") or artigo.get("title", ""))
+            titulo = normalizar_texto(artigo.get("Titulo", "") or artigo.get("title", ""))
             if titulo:
                 chave = f"title:{titulo}"
             else:

@@ -3,7 +3,7 @@ from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
 import pandas as pd
 
-# Configurar token do Hugging Face para evitar avisos de autenticação
+# Configurar token do Hugging Face para evitar avisos de autenticacao
 hf_token = os.getenv('HF_TOKEN') or os.getenv('HF_HUB_TOKEN')
 if hf_token:
     os.environ['HF_TOKEN'] = hf_token
@@ -27,7 +27,7 @@ def calcular_similaridade(
 
     for artigo in artigos:
 
-        titulo = artigo.get("Título", "")
+        titulo = artigo.get("Titulo", "")
         resumo = artigo.get("Resumo", "")
 
         texto = f"{titulo}. {resumo}"
@@ -61,7 +61,7 @@ def calcular_similaridade(
     )
 
     print(
-        f"\nArtigos após filtro semântico "
+        f"\nArtigos apos filtro semantico "
         f"(>= {similaridade_minima}): "
         f"{len(artigos_ordenados)}"
     )
@@ -81,4 +81,4 @@ def salvar_ranking_semantico(artigos):
 
     df.to_excel(caminho, index=False)
 
-    print(f"\nRanking semântico salvo em: {caminho}")
+    print(f"\nRanking semantico salvo em: {caminho}")
