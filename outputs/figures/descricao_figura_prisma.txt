@@ -1,0 +1,8 @@
+
+Descrição sugerida para figura PRISMA:
+
+Fluxograma representando o processo de identificação, triagem, elegibilidade e inclusão dos estudos na revisão intitulada "".
+
+A busca bibliográfica considerou publicações entre  e , utilizando os seguintes descritores: .
+
+A figura deverá apresentar o número total de registros identificados nas bases consultadas, os registros removidos por duplicidade, os estudos excluídos após leitura de título e resumo, os textos completos avaliados para elegibilidade e os estudos finais incluídos na síntese qualitativa e/ou quantitativa.
