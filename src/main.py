@@ -14,6 +14,8 @@ from ia.ranking_semantico import (
     salvar_ranking_semantico
 )
 
+from ia.gerador_booleano import gerar_booleano
+
 from outputs.word_writer import gerar_relatorio_word
 
 
@@ -36,23 +38,46 @@ def coletar_parametros():
     print("        PRISMA REVIEW ROBOT")
     print("========================================\n")
 
-    tema = input("Digite o tema da revisAo: ")
+    tema = input("Digite o tema da revisao: ")
     ano_inicial = input("Ano inicial: ")
     ano_final = input("Ano final: ")
 
-    print("\nExemplo de busca:")
-    print('("medical education" OR "educaAAo mAdica") AND ("artificial intelligence" OR "inteligAncia artificial")')
+    print("\nOpcoes de busca:")
+    print("1. Digitar estrategia booleana manualmente")
+    print("2. Usar gerador automatico de queries booleanas")
 
-    query = input("\nDigite a estratAgia de busca booleana: ")
+    opcao = input("\nEscolha uma opcao (1 ou 2): ").strip()
 
-    max_artigos = input("NAmero mAximo de artigos por base: ")
+    if opcao == "2":
+        print("\nGERADOR AUTOMATICO DE QUERIES BOOLEANAS")
+        print("=========================================")
+        print("Digite os termos principais separados por espaco.")
+        print("Exemplo: takotsubo microbiota depressao")
+        print("\nTermos disponiveis com sinonimos:")
+        print("- takotsubo, microbiota, depressao, ansiedade")
+        print("- medicina, brasil, covid, mortalidade")
+        print("- diagnostico, tratamento")
+
+        termos_usuario = input("\nDigite os termos: ")
+        query = gerar_booleano(termos_usuario)
+
+        print(f"\nQuery booleana gerada:")
+        print(query)
+
+    else:
+        print("\nExemplo de busca:")
+        print('("medical education" OR "educacao medica") AND ("artificial intelligence" OR "inteligencia artificial")')
+
+        query = input("\nDigite a estrategia de busca booleana: ")
+
+    max_artigos = input("Numero maximo de artigos por base: ")
 
     if not max_artigos.strip():
         max_artigos = 50
     else:
         max_artigos = int(max_artigos)
 
-    tipo_revisao = input("Tipo de revisAo desejada: ")
+    tipo_revisao = input("Tipo de revisao desejada: ")
 
     parametros = {
         "tema": tema,
