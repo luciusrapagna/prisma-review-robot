@@ -4,7 +4,7 @@ from pathlib import Path
 from docx import Document
 
 
-def gerar_relatorio_word(parametros, artigos):
+def gerar_relatorio_word(parametros, artigos, base_projeto=""):
     document = Document()
 
     document.add_heading('Relatorio PRISMA Review Robot', level=1)
@@ -55,7 +55,10 @@ def gerar_relatorio_word(parametros, artigos):
 
     data_execucao = parametros.get('data_execucao', datetime.now().strftime('%Y-%m-%d_%H%M%S'))
     nome_arquivo = f"relatorio_prisma_robot_{data_execucao.replace(' ', '_').replace(':', '-')}.docx"
-    caminho = Path('outputs') / nome_arquivo
+    if base_projeto:
+        caminho = Path(base_projeto) / 'outputs' / nome_arquivo
+    else:
+        caminho = Path('outputs') / nome_arquivo
     caminho.parent.mkdir(parents=True, exist_ok=True)
 
     document.save(caminho)

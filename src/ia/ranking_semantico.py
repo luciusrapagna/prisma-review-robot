@@ -69,7 +69,7 @@ def calcular_similaridade(
     return artigos_ordenados
 
 
-def salvar_ranking_semantico(artigos):
+def salvar_ranking_semantico(artigos, base_projeto=""):
 
     if not artigos:
         print("\nNenhum artigo para salvar.")
@@ -77,7 +77,7 @@ def salvar_ranking_semantico(artigos):
 
     df = pd.DataFrame(artigos)
 
-    caminho = "outputs/tables/ranking_semantico.xlsx"
+    caminho = f"{base_projeto}/outputs/tables/ranking_semantico.xlsx" if base_projeto else "outputs/tables/ranking_semantico.xlsx"
 
     df.to_excel(caminho, index=False)
 

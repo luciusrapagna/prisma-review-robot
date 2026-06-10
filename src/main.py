@@ -1,22 +1,68 @@
 from datetime import datetime
 import os
+import sys
+from pathlib import Path
 import pandas as pd
 
-from buscadores.pubmed import executar_busca_pubmed
-from buscadores.crossref import executar_busca_crossref
-from buscadores.scielo import executar_busca_scielo
-from buscadores.lilacs import executar_busca_lilacs
+# Garantir que o pacote src seja importavel quando main.py for executado diretamente
+ROOT_DIR = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT_DIR))
 
-from prisma.duplicates import remover_duplicatas
+from src.buscadores.pubmed import executar_busca_pubmed
+from src.buscadores.crossref import executar_busca_crossref
+from src.buscadores.scielo import executar_busca_scielo
+from src.buscadores.lilacs import executar_busca_lilacs
 
-from ia.ranking_semantico import (
+from src.prisma.duplicates import remover_duplicatas
+
+from src.ia.ranking_semantico import (
     calcular_similaridade,
     salvar_ranking_semantico
 )
 
-from ia.gerador_booleano import gerar_booleano
+from src.ia.gerador_booleano import gerar_booleano
 
-from outputs.word_writer import gerar_relatorio_word
+from src.outputs.word_writer import gerar_relatorio_word
+
+
+def obter_proximo_numero_projeto():
+    """Determina o próximo número de projeto disponível."""
+    if not os.path.exists("projetos"):
+        os.makedirs("projetos", exist_ok=True)
+        return 1
+
+    projetos_existentes = []
+    for item in os.listdir("projetos"):
+        if os.path.isdir(os.path.join("projetos", item)) and item.startswith("projeto "):
+            try:
+                numero = int(item.split(" ")[1])
+                projetos_existentes.append(numero)
+            except (ValueError, IndexError):
+                continue
+
+    if not projetos_existentes:
+        return 1
+
+    return max(projetos_existentes) + 1
+
+
+def criar_pastas_projeto(numero_projeto):
+    """Cria a estrutura de pastas para o projeto específico."""
+    base_projeto = f"projetos/projeto {numero_projeto}"
+
+    pastas = [
+        f"{base_projeto}/data/raw",
+        f"{base_projeto}/data/processed",
+        f"{base_projeto}/outputs/tables",
+        f"{base_projeto}/outputs/figures",
+        f"{base_projeto}/outputs/references",
+        f"{base_projeto}/logs"
+    ]
+
+    for pasta in pastas:
+        os.makedirs(pasta, exist_ok=True)
+
+    return base_projeto
 
 
 def criar_pastas():
@@ -128,19 +174,19 @@ def perguntar_similaridade():
         return 0.30
 
 
-def gerar_tabela_parametros(parametros, similaridade_minima):
+def gerar_tabela_parametros(parametros, similaridade_minima, base_projeto=""):
     dados = {
         "Campo": [
             "Tema",
             "Ano inicial",
             "Ano final",
-            "EstratAgia de busca",
-            "MAximo de artigos por base",
-            "Tipo de revisAo",
-            "Similaridade mAnima",
-            "Data de execuAAo"
+            "Estrategia de busca",
+            "Maximo de artigos por base",
+            "Tipo de revisao",
+            "Similaridade minima",
+            "Data de execucao"
         ],
-        "InformaAAo": [
+        "Informacao": [
             parametros["tema"],
             parametros["ano_inicial"],
             parametros["ano_final"],
@@ -154,20 +200,20 @@ def gerar_tabela_parametros(parametros, similaridade_minima):
 
     df = pd.DataFrame(dados)
 
-    caminho = "outputs/tables/parametros_revisao.xlsx"
+    caminho = f"{base_projeto}/outputs/tables/parametros_revisao.xlsx" if base_projeto else "outputs/tables/parametros_revisao.xlsx"
     df.to_excel(caminho, index=False)
 
-    print(f"\nTabela de parAmetros gerada em: {caminho}")
+    print(f"\nTabela de parametros gerada em: {caminho}")
 
 
-def salvar_tabela_consolidada(artigos):
-    caminho = "outputs/tables/tabela_consolidada_multibase.xlsx"
+def salvar_tabela_consolidada(artigos, base_projeto=""):
+    caminho = f"{base_projeto}/outputs/tables/tabela_consolidada_multibase.xlsx" if base_projeto else "outputs/tables/tabela_consolidada_multibase.xlsx"
 
     if not artigos:
         df = pd.DataFrame(columns=[
             "Base",
             "PMID",
-            "TAtulo",
+            "Titulo",
             "Autores",
             "Ano",
             "Revista",
@@ -192,7 +238,8 @@ def gerar_descricao_figura_prisma(
     total_identificados,
     total_sem_duplicatas,
     total_apos_similaridade,
-    similaridade_minima
+    similaridade_minima,
+    base_projeto=""
 ):
     duplicatas = total_identificados - total_sem_duplicatas
     excluidos_por_similaridade = total_sem_duplicatas - total_apos_similaridade
@@ -237,21 +284,21 @@ Construir um fluxograma vertical em quatro etapas principais: IdentificaAAo, Tri
 Essa descriAAo pode ser utilizada como base para criaAAo da figura no PowerPoint, Canva, CorelDRAW, BioRender ou outro software grAfico.
 """
 
-    caminho = "outputs/figures/descricao_figura_prisma.txt"
+    caminho = f"{base_projeto}/outputs/figures/descricao_figura_prisma.txt" if base_projeto else "outputs/figures/descricao_figura_prisma.txt"
 
     with open(caminho, "w", encoding="utf-8") as arquivo:
         arquivo.write(texto)
 
-    print(f"\nDescriAAo da figura PRISMA gerada em: {caminho}")
+    print(f"\nDescricao da figura PRISMA gerada em: {caminho}")
 
 
-def gerar_ris_zotero(artigos):
-    caminho = "outputs/references/referencias_multibase.ris"
+def gerar_ris_zotero(artigos, base_projeto=""):
+    caminho = f"{base_projeto}/outputs/references/referencias_multibase.ris" if base_projeto else "outputs/references/referencias_multibase.ris"
 
     with open(caminho, "w", encoding="utf-8") as arquivo:
         for artigo in artigos:
             arquivo.write("TY  - JOUR\n")
-            arquivo.write(f"TI  - {artigo.get('TAtulo', '')}\n")
+            arquivo.write(f"TI  - {artigo.get('Titulo', '')}\n")
             arquivo.write(f"PY  - {artigo.get('Ano', '')}\n")
             arquivo.write(f"JO  - {artigo.get('Revista', '')}\n")
             arquivo.write(f"DO  - {artigo.get('DOI', '')}\n")
@@ -308,13 +355,20 @@ def executar_buscas(parametros):
 def main():
     criar_pastas()
 
+    numero_projeto = obter_proximo_numero_projeto()
+    base_projeto = criar_pastas_projeto(numero_projeto)
+
+    print(f"\nPROJETO {numero_projeto} - {base_projeto}")
+    print("=" * 50)
+
     parametros = coletar_parametros()
 
     similaridade_minima = perguntar_similaridade()
 
     gerar_tabela_parametros(
         parametros,
-        similaridade_minima
+        similaridade_minima,
+        base_projeto
     )
 
     (
@@ -331,7 +385,7 @@ def main():
         + artigos_lilacs
     )
 
-    salvar_tabela_consolidada(todos_artigos)
+    salvar_tabela_consolidada(todos_artigos, base_projeto)
 
     total_pubmed = len(artigos_pubmed)
     total_crossref = len(artigos_crossref)
@@ -351,11 +405,12 @@ def main():
 
     total_apos_similaridade = len(artigos_rankeados)
 
-    salvar_ranking_semantico(artigos_rankeados)
+    salvar_ranking_semantico(artigos_rankeados, base_projeto)
 
     caminho_relatorio = gerar_relatorio_word(
         parametros,
-        artigos_rankeados
+        artigos_rankeados,
+        base_projeto
     )
 
     gerar_descricao_figura_prisma(
@@ -367,27 +422,29 @@ def main():
         total_identificados=total_identificados,
         total_sem_duplicatas=total_sem_duplicatas,
         total_apos_similaridade=total_apos_similaridade,
-        similaridade_minima=similaridade_minima
+        similaridade_minima=similaridade_minima,
+        base_projeto=base_projeto
     )
 
-    gerar_ris_zotero(artigos_rankeados)
+    gerar_ris_zotero(artigos_rankeados, base_projeto)
 
     print("\n========================================")
-    print("ROBA EXECUTADO COM SUCESSO!")
+    print("ROBO EXECUTADO COM SUCESSO!")
     print("========================================")
     print(f"PubMed: {total_pubmed} registros")
     print(f"Crossref: {total_crossref} registros")
     print(f"SciELO: {total_scielo} registros")
     print(f"LILACS/BVS: {total_lilacs} registros")
     print(f"Total identificado: {total_identificados} registros")
-    print(f"Total apAs duplicatas: {total_sem_duplicatas} registros")
-    print(f"Total apAs similaridade: {total_apos_similaridade} registros")
-    print(f"Similaridade mAnima usada: {similaridade_minima}")
+    print(f"Total apos duplicatas: {total_sem_duplicatas} registros")
+    print(f"Total apos similaridade: {total_apos_similaridade} registros")
+    print(f"Similaridade minima usada: {similaridade_minima}")
 
+    print(f"\nPROJETO SALVO EM: {base_projeto}")
     print("\nArquivos gerados em:")
-    print("outputs/tables")
-    print("outputs/figures")
-    print("outputs/references")
+    print(f"{base_projeto}/outputs/tables")
+    print(f"{base_projeto}/outputs/figures")
+    print(f"{base_projeto}/outputs/references")
     print(caminho_relatorio)
 
 

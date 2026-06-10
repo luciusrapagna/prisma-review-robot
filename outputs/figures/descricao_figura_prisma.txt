@@ -1,8 +1,44 @@
 
-Descrição sugerida para figura PRISMA:
+DescriAAo sugerida para figura PRISMA:
 
-Fluxograma representando o processo de identificação, triagem, elegibilidade e inclusão dos estudos na revisão intitulada "".
+Fluxograma representando o processo de identificaAAo, triagem, elegibilidade e inclusAo dos estudos da revisAo intitulada "cardiomiopatia de Takotsubo".
 
-A busca bibliográfica considerou publicações entre  e , utilizando os seguintes descritores: .
+A busca bibliogrAfica foi realizada nas bases PubMed, Crossref, SciELO e LILACS/BVS, considerando publicaAAes entre 2015 e 2025.
 
-A figura deverá apresentar o número total de registros identificados nas bases consultadas, os registros removidos por duplicidade, os estudos excluídos após leitura de título e resumo, os textos completos avaliados para elegibilidade e os estudos finais incluídos na síntese qualitativa e/ou quantitativa.
+A estratAgia de busca utilizada foi:
+
+("Takotsubo cardiomyopathy"[Title/Abstract] OR "Takotsubo syndrome"[Title/Abstract] OR "stress cardiomyopathy"[Title/Abstract] OR "stress-induced cardiomyopathy"[Title/Abstract] OR "broken heart syndrome"[Title/Abstract] OR "apical ballooning syndrome"[Title/Abstract])
+AND
+("depression"[Title/Abstract] OR "depressive symptoms"[Title/Abstract] OR "major depression"[Title/Abstract])
+AND
+("Brazil"[Title/Abstract] OR "Brasil"[Title/Abstract] OR "Brazilian"[Title/Abstract])
+AND
+("COVID-19"[Title/Abstract] OR "SARS-CoV-2"[Title/Abstract] OR "coronavirus"[Title/Abstract])
+
+Na etapa de identificaAAo, foram recuperados:
+- PubMed: 0 registros;
+- Crossref: 100 registros;
+- SciELO: 0 registros;
+- LILACS/BVS: 0 registros.
+
+O total inicial identificado foi de 100 registros.
+
+ApAs a remoAAo automAtica de duplicatas, permaneceram 100 registros Anicos. Foram removidos 0 registros duplicados.
+
+ApAs a triagem semAntica automatizada, utilizando similaridade mAnima de 0.8, permaneceram 0 registros. Foram excluAdos 100 registros por baixa similaridade com o tema da revisAo.
+
+A figura PRISMA deverA apresentar:
+1. registros identificados em cada base;
+2. total de registros identificados;
+3. registros removidos por duplicidade;
+4. registros triados por similaridade semAntica;
+5. registros excluAdos por baixa similaridade;
+6. registros mantidos para leitura de tAtulo e resumo;
+7. textos completos avaliados para elegibilidade;
+8. textos completos excluAdos com justificativa;
+9. estudos finais incluAdos na sAntese qualitativa e/ou quantitativa.
+
+SugestAo visual:
+Construir um fluxograma vertical em quatro etapas principais: IdentificaAAo, Triagem, Elegibilidade e InclusAo. Cada base de dados pode aparecer em uma caixa lateral na etapa de identificaAAo, convergindo para o total de registros identificados. Em seguida, inserir a caixa de remoAAo de duplicatas, seguida da triagem semAntica, avaliaAAo de elegibilidade e inclusAo final.
+
+Essa descriAAo pode ser utilizada como base para criaAAo da figura no PowerPoint, Canva, CorelDRAW, BioRender ou outro software grAfico.
