@@ -1,7 +1,15 @@
+import shutil
+import glob
+
+try:
+    from exportacao_prisma_elegante import exportar_master_prisma as exportar_master_prisma_elegante
+except ImportError:
+    from src.exportacao_prisma_elegante import exportar_master_prisma as exportar_master_prisma_elegante
 
 from database.historico import (
     salvar_revisao,
-    listar_revisoes
+    listar_revisoes,
+    limpar_historico
 )
 
 from exports.abnt import gerar_referencias_abnt
@@ -10,6 +18,7 @@ from prisma_flow.fluxograma import gerar_fluxograma_prisma
 
 
 import streamlit as st
+from components.sidebar import render_sidebar_manutencao
 
 st.set_page_config(
     page_title="PRISMA Review Robot",
@@ -18,6 +27,11 @@ st.set_page_config(
 )
 
 st.title("📚 PRISMA Review Robot")
+render_sidebar_manutencao()
+
+
+
+
 st.subheader("ATHENA Scientific — Revisões Sistemáticas Inteligentes")
 
 st.markdown("""
@@ -43,11 +57,23 @@ with st.sidebar:
     else:
         st.info("Nenhuma revisão registrada.")
 
+    st.divider()
+
+    if st.button(
+        "🗑️ Limpar histórico",
+        use_container_width=True,
+        type="secondary"
+    ):
+        limpar_historico()
+        st.success("Histórico apagado com sucesso.")
+        st.rerun()
+
 st.divider()
 
 
 from datetime import datetime
 import os
+import hashlib
 import pandas as pd
 
 from buscadores.pubmed import executar_busca_pubmed
@@ -93,9 +119,20 @@ def coletar_parametros():
         index=1
     )
 
+    booleano_automatico = gerar_booleano(tema, tipo_revisao)
+
+    st.caption("Booleano automático ATHENA gerado a partir do tema e do tipo de revisão:")
+    st.code(booleano_automatico, language="text")
+
+    query_key = "query_geral_" + hashlib.md5(
+        f"{tema}|{tipo_revisao}".encode("utf-8")
+    ).hexdigest()
+
     query_geral = st.text_area(
         "Estratégia de busca / query geral",
-        value=f'("{tema}") AND ("review" OR "systematic review" OR "scoping review")'
+        value=booleano_automatico,
+        height=260,
+        key=query_key
     )
 
     col1, col2, col3 = st.columns(3)
@@ -416,6 +453,14 @@ def main():
         total_apos_similaridade=total_apos_similaridade
     )
 
+    arquivos_master = exportar_master_prisma_elegante(
+        artigos_totais=todos_artigos,
+        artigos_incluidos=artigos_rankeados,
+        svg_fluxo=svg_fluxo,
+        jpg_fluxo=None,
+        pdf_fluxo=pdf_fluxo,
+    )
+
     salvar_revisao(
         parametros=parametros,
         total_identificados=total_identificados,
@@ -493,6 +538,201 @@ def main():
     )
 
 
+    st.subheader("📦 Exportação master ATHENA PRISMA")
+
+    for nome, caminho in arquivos_master.items():
+        caminho = Path(caminho)
+        if caminho.exists():
+            with open(caminho, "rb") as f:
+                st.download_button(
+                    label=f"⬇️ Baixar {nome}",
+                    data=f,
+                    file_name=caminho.name,
+                    mime="application/octet-stream"
+                )
+
+
+
+
+
 
 if __name__ == "__main__":
     main()
+
+
+from openpyxl import Workbook
+from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+from openpyxl.utils import get_column_letter
+from docx import Document
+from docx.shared import Pt
+from docx.enum.text import WD_ALIGN_PARAGRAPH
+
+
+def _autor_curto_prisma(autores):
+    if not autores:
+        return ""
+
+    if isinstance(autores, str):
+        lista = [a.strip() for a in autores.replace(";", ",").split(",") if a.strip()]
+    else:
+        lista = autores
+
+    sobrenomes = []
+    for autor in lista:
+        partes = str(autor).strip().split()
+        if partes:
+            sobrenomes.append(partes[-1])
+
+    if len(sobrenomes) == 1:
+        return sobrenomes[0]
+    if len(sobrenomes) == 2:
+        return f"{sobrenomes[0]} & {sobrenomes[1]}"
+    return f"{sobrenomes[0]} et al."
+
+
+def _campo_prisma(artigo, *nomes, padrao=""):
+    if not isinstance(artigo, dict):
+        return padrao
+    for nome in nomes:
+        valor = artigo.get(nome)
+        if valor not in [None, ""]:
+            return valor
+    return padrao
+
+
+def exportar_excel_master_elegante(artigos, pasta_saida="outputs"):
+    Path(pasta_saida).mkdir(parents=True, exist_ok=True)
+
+    caminho = Path(pasta_saida) / "ATHENA_PRISMA_Master.xlsx"
+
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Estudos incluídos"
+
+    colunas = ["ID", "Autor", "Ano", "Título", "Revista", "DOI", "Link", "Base", "Status"]
+    ws.append(colunas)
+
+    for i, artigo in enumerate(artigos, start=1):
+        autores = _campo_prisma(artigo, "autores", "authors")
+        ws.append([
+            i,
+            _autor_curto_prisma(autores),
+            _campo_prisma(artigo, "ano", "year"),
+            _campo_prisma(artigo, "titulo", "title"),
+            _campo_prisma(artigo, "revista", "journal", "fonte"),
+            _campo_prisma(artigo, "doi", "DOI"),
+            _campo_prisma(artigo, "link", "url", "pubmed_url"),
+            _campo_prisma(artigo, "base", "database", padrao="PubMed"),
+            _campo_prisma(artigo, "status", padrao="Incluído"),
+        ])
+
+    header_fill = PatternFill("solid", fgColor="1F4E78")
+    header_font = Font(color="FFFFFF", bold=True)
+    thin = Side(border_style="thin", color="D9E2F3")
+
+    for cell in ws[1]:
+        cell.fill = header_fill
+        cell.font = header_font
+        cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+        cell.border = Border(top=thin, left=thin, right=thin, bottom=thin)
+
+    for row in ws.iter_rows(min_row=2):
+        for cell in row:
+            cell.alignment = Alignment(vertical="center", wrap_text=True)
+            cell.border = Border(top=thin, left=thin, right=thin, bottom=thin)
+
+    for row in range(2, ws.max_row + 1):
+        doi_cell = ws[f"F{row}"]
+        link_cell = ws[f"G{row}"]
+
+        if doi_cell.value:
+            doi_cell.hyperlink = f"https://doi.org/{doi_cell.value}"
+            doi_cell.style = "Hyperlink"
+
+        if link_cell.value:
+            link_cell.hyperlink = str(link_cell.value)
+            link_cell.style = "Hyperlink"
+
+    ws.freeze_panes = "A2"
+    ws.auto_filter.ref = ws.dimensions
+
+    for col in ws.columns:
+        max_length = 0
+        col_letter = get_column_letter(col[0].column)
+        for cell in col:
+            value = str(cell.value) if cell.value else ""
+            max_length = max(max_length, len(value))
+        ws.column_dimensions[col_letter].width = min(max_length + 3, 60)
+
+    wb.save(caminho)
+    return str(caminho)
+
+
+def exportar_word_tabela_artigo(artigos, pasta_saida="outputs"):
+    Path(pasta_saida).mkdir(parents=True, exist_ok=True)
+
+    caminho = Path(pasta_saida) / "ATHENA_PRISMA_Tabela_Artigo.docx"
+
+    doc = Document()
+
+    titulo = doc.add_heading("ATHENA PRISMA REVIEW ROBOT", level=1)
+    titulo.alignment = WD_ALIGN_PARAGRAPH.CENTER
+
+    subtitulo = doc.add_heading("Tabela de Estudos Incluídos", level=2)
+    subtitulo.alignment = WD_ALIGN_PARAGRAPH.CENTER
+
+    p = doc.add_paragraph(f"Estudos incluídos (n = {len(artigos)}).")
+    p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+
+    tabela = doc.add_table(rows=1, cols=4)
+    tabela.style = "Table Grid"
+
+    headers = ["Autor", "Ano", "Título", "Revista"]
+    for i, h in enumerate(headers):
+        tabela.rows[0].cells[i].text = h
+
+    for cell in tabela.rows[0].cells:
+        for paragraph in cell.paragraphs:
+            for run in paragraph.runs:
+                run.bold = True
+                run.font.name = "Times New Roman"
+                run.font.size = Pt(12)
+
+    for artigo in artigos:
+        autores = _campo_prisma(artigo, "autores", "authors")
+        row = tabela.add_row().cells
+        row[0].text = _autor_curto_prisma(autores)
+        row[1].text = str(_campo_prisma(artigo, "ano", "year"))
+        row[2].text = str(_campo_prisma(artigo, "titulo", "title"))
+        row[3].text = str(_campo_prisma(artigo, "revista", "journal", "fonte"))
+
+    for paragraph in doc.paragraphs:
+        for run in paragraph.runs:
+            run.font.name = "Times New Roman"
+            run.font.size = Pt(12)
+
+    for table in doc.tables:
+        for row in table.rows:
+            for cell in row.cells:
+                for paragraph in cell.paragraphs:
+                    for run in paragraph.runs:
+                        run.font.name = "Times New Roman"
+                        run.font.size = Pt(12)
+
+    doc.save(caminho)
+    return str(caminho)
+
+
+def exportar_master_prisma(artigos_totais, artigos_incluidos, svg_fluxo=None, jpg_fluxo=None, pdf_fluxo=None):
+    arquivos = {}
+
+    arquivos["excel_master"] = exportar_excel_master_elegante(artigos_incluidos)
+    arquivos["word_tabela_artigo"] = exportar_word_tabela_artigo(artigos_incluidos)
+
+    if svg_fluxo:
+        arquivos["fluxograma_svg"] = svg_fluxo
+
+    if pdf_fluxo:
+        arquivos["fluxograma_pdf"] = pdf_fluxo
+
+    return arquivos
