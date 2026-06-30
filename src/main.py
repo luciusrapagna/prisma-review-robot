@@ -1,3 +1,51 @@
+
+from database.historico import (
+    salvar_revisao,
+    listar_revisoes
+)
+
+from exports.abnt import gerar_referencias_abnt
+
+from prisma_flow.fluxograma import gerar_fluxograma_prisma
+
+
+import streamlit as st
+
+st.set_page_config(
+    page_title="PRISMA Review Robot",
+    page_icon="📚",
+    layout="wide"
+)
+
+st.title("📚 PRISMA Review Robot")
+st.subheader("ATHENA Scientific — Revisões Sistemáticas Inteligentes")
+
+st.markdown("""
+Sistema automatizado para:
+- busca bibliográfica multibase
+- remoção de duplicatas
+- ranking semântico por IA
+- geração automática de relatórios PRISMA
+- exportação Word, tabelas e RIS Zotero
+""")
+
+
+historico = listar_revisoes()
+
+with st.sidebar:
+    st.header("📚 Histórico ATHENA")
+
+    if historico:
+        for item in historico[:10]:
+            st.caption(
+                f"{item[1]} | {item[8]}"
+            )
+    else:
+        st.info("Nenhuma revisão registrada.")
+
+st.divider()
+
+
 from datetime import datetime
 import os
 import pandas as pd
@@ -34,98 +82,79 @@ def criar_pastas():
 
 
 def coletar_parametros():
-    print("\n========================================")
-    print("        PRISMA REVIEW ROBOT")
-    print("========================================\n")
+    import streamlit as st
+    from datetime import date
 
-    tema = input("Digite o tema da revisao: ")
-    ano_inicial = input("Ano inicial: ")
-    ano_final = input("Ano final: ")
+    tema = st.text_input("Digite o tema da revisão", value="dengue")
 
-    print("\nOpcoes de busca:")
-    print("1. Digitar estrategia booleana manualmente")
-    print("2. Usar gerador automatico de queries booleanas")
+    tipo_revisao = st.selectbox(
+        "Tipo de revisão",
+        ["Revisão sistemática", "Revisão de escopo", "Revisão integrativa", "Revisão narrativa"],
+        index=1
+    )
 
-    opcao = input("\nEscolha uma opcao (1 ou 2): ").strip()
+    query_geral = st.text_area(
+        "Estratégia de busca / query geral",
+        value=f'("{tema}") AND ("review" OR "systematic review" OR "scoping review")'
+    )
 
-    if opcao == "2":
-        print("\nGERADOR AUTOMATICO DE QUERIES BOOLEANAS")
-        print("=========================================")
-        print("Digite os termos principais separados por espaco.")
-        print("Exemplo: takotsubo microbiota depressao")
-        print("\nTermos disponiveis com sinonimos:")
-        print("- takotsubo, microbiota, depressao, ansiedade")
-        print("- medicina, brasil, covid, mortalidade")
-        print("- diagnostico, tratamento")
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        ano_inicial = st.number_input("Ano inicial", min_value=1900, max_value=2100, value=2014, step=1)
+    with col2:
+        ano_final = st.number_input("Ano final", min_value=1900, max_value=2100, value=2026, step=1)
+    with col3:
+        max_artigos = st.number_input("Número máximo de artigos", min_value=1, max_value=1000, value=30, step=1)
 
-        termos_usuario = input("\nDigite os termos: ")
-        query = gerar_booleano(termos_usuario)
+    data_execucao = st.date_input("Data de execução", value=date.today())
 
-        print(f"\nQuery booleana gerada:")
-        print(query)
+    bases = st.multiselect(
+        "Bases de dados",
+        ["PubMed", "Scopus", "Web of Science", "SciELO", "LILACS", "BVS", "Google Scholar"],
+        default=["PubMed", "SciELO", "LILACS"]
+    )
 
-    else:
-        print("\nExemplo de busca:")
-        print('("medical education" OR "educacao medica") AND ("artificial intelligence" OR "inteligencia artificial")')
+    idioma = st.multiselect(
+        "Idiomas",
+        ["Português", "Inglês", "Espanhol"],
+        default=["Português", "Inglês", "Espanhol"]
+    )
 
-        query = input("\nDigite a estrategia de busca booleana: ")
+    tipo_estudo = st.text_input("Tipo de estudo", value=tipo_revisao)
 
-    max_artigos = input("Numero maximo de artigos por base: ")
+    if not tema:
+        st.warning("Informe o tema da revisão para continuar.")
+        st.stop()
 
-    if not max_artigos.strip():
-        max_artigos = 50
-    else:
-        max_artigos = int(max_artigos)
-
-    tipo_revisao = input("Tipo de revisao desejada: ")
-
-    parametros = {
+    return {
         "tema": tema,
-        "ano_inicial": ano_inicial,
-        "ano_final": ano_final,
-        "query_pubmed": query,
-        "query_geral": query,
-        "max_artigos": max_artigos,
         "tipo_revisao": tipo_revisao,
-        "data_execucao": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        "query_geral": query_geral,
+        "query_pubmed": query_geral,
+        "query_scielo": query_geral,
+        "query_lilacs": query_geral,
+        "ano_inicial": int(ano_inicial),
+        "ano_final": int(ano_final),
+        "max_artigos": int(max_artigos),
+        "bases": ", ".join(bases),
+        "idioma": ", ".join(idioma),
+        "tipo_estudo": tipo_estudo,
+        "data_execucao": data_execucao.strftime("%d/%m/%Y")
     }
-
-    return parametros
 
 
 def perguntar_similaridade():
-    print("\n========================================")
-    print("FILTRO DE SIMILARIDADE SEMANTICA")
-    print("========================================")
+    import streamlit as st
 
-    print("\nSugestAes:")
-    print("0.40 = muito amplo")
-    print("0.50 = amplo")
-    print("0.60 = moderado")
-    print("0.70 = rigoroso")
-    print("0.80 = muito rigoroso")
+    valor = st.number_input(
+        "Digite a similaridade mínima desejada",
+        min_value=0.0,
+        max_value=1.0,
+        value=0.35,
+        step=0.05
+    )
 
-    valor = input("\nDigite a similaridade mAnima desejada: ")
-
-    if not valor.strip():
-        return 0.30
-
-    try:
-        valor = float(valor.replace(",", "."))
-
-        if valor < 0:
-            print("Valor invAlido. Usando 0.30.")
-            return 0.30
-
-        if valor > 1:
-            print("Valor invAlido. Usando 0.30.")
-            return 0.30
-
-        return valor
-
-    except ValueError:
-        print("Valor invAlido. Usando 0.30.")
-        return 0.30
+    return float(valor)
 
 
 def gerar_tabela_parametros(parametros, similaridade_minima):
@@ -312,6 +341,13 @@ def main():
 
     similaridade_minima = perguntar_similaridade()
 
+    import streamlit as st
+
+    executar = st.button("🚀 Executar revisão")
+
+    if not executar:
+        st.stop()
+
     gerar_tabela_parametros(
         parametros,
         similaridade_minima
@@ -372,23 +408,90 @@ def main():
 
     gerar_ris_zotero(artigos_rankeados)
 
-    print("\n========================================")
-    print("ROBA EXECUTADO COM SUCESSO!")
-    print("========================================")
-    print(f"PubMed: {total_pubmed} registros")
-    print(f"Crossref: {total_crossref} registros")
-    print(f"SciELO: {total_scielo} registros")
-    print(f"LILACS/BVS: {total_lilacs} registros")
-    print(f"Total identificado: {total_identificados} registros")
-    print(f"Total apAs duplicatas: {total_sem_duplicatas} registros")
-    print(f"Total apAs similaridade: {total_apos_similaridade} registros")
-    print(f"Similaridade mAnima usada: {similaridade_minima}")
+    gerar_referencias_abnt(artigos_rankeados)
 
-    print("\nArquivos gerados em:")
-    print("outputs/tables")
-    print("outputs/figures")
-    print("outputs/references")
-    print(caminho_relatorio)
+    svg_fluxo, pdf_fluxo = gerar_fluxograma_prisma(
+        total_identificados=total_identificados,
+        total_sem_duplicatas=total_sem_duplicatas,
+        total_apos_similaridade=total_apos_similaridade
+    )
+
+    salvar_revisao(
+        parametros=parametros,
+        total_identificados=total_identificados,
+        total_pos_duplicatas=total_sem_duplicatas,
+        total_pos_similaridade=total_apos_similaridade
+    )
+
+
+    import streamlit as st
+    from pathlib import Path
+    import zipfile
+    from io import BytesIO
+
+    st.success("✅ Robô PRISMA executado com sucesso!")
+
+    st.write(f"**PubMed:** {total_pubmed} registros")
+    st.write(f"**Crossref:** {total_crossref} registros")
+    st.write(f"**SciELO:** {total_scielo} registros")
+    st.write(f"**LILACS/BVS:** {total_lilacs} registros")
+    st.write(f"**Total identificado:** {total_identificados} registros")
+    st.write(f"**Total após duplicatas:** {total_sem_duplicatas} registros")
+    st.write(f"**Total após similaridade:** {total_apos_similaridade} registros")
+    st.write(f"**Similaridade mínima usada:** {similaridade_minima}")
+
+    st.subheader("📊 Fluxograma PRISMA")
+
+    st.image(svg_fluxo)
+
+    with open(svg_fluxo, "rb") as f:
+        st.download_button(
+            "🖼️ Baixar fluxograma SVG",
+            f,
+            file_name="fluxograma_prisma.svg",
+            mime="image/svg+xml"
+        )
+
+    with open(pdf_fluxo, "rb") as f:
+        st.download_button(
+            "📄 Baixar fluxograma PDF",
+            f,
+            file_name="fluxograma_prisma.pdf",
+            mime="application/pdf"
+        )
+
+    st.subheader("📁 Arquivos gerados")
+
+    caminho_relatorio = Path(caminho_relatorio)
+
+    if caminho_relatorio.exists():
+        with open(caminho_relatorio, "rb") as f:
+            st.download_button(
+                "📄 Baixar relatório Word",
+                f,
+                file_name=caminho_relatorio.name,
+                mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+            )
+
+    memoria_zip = BytesIO()
+
+    with zipfile.ZipFile(memoria_zip, "w", zipfile.ZIP_DEFLATED) as zipf:
+        for pasta in ["outputs/tables", "outputs/figures", "outputs/references"]:
+            p = Path(pasta)
+            if p.exists():
+                for arquivo_saida in p.rglob("*"):
+                    if arquivo_saida.is_file():
+                        zipf.write(arquivo_saida, arquivo_saida.as_posix())
+
+    memoria_zip.seek(0)
+
+    st.download_button(
+        "📦 Baixar todos os arquivos gerados",
+        memoria_zip,
+        file_name="prisma_outputs.zip",
+        mime="application/zip"
+    )
+
 
 
 if __name__ == "__main__":
