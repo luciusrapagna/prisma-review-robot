@@ -1,3 +1,4 @@
+from src.utils.nomes_arquivos import limpar_nome_arquivo, caminho_saida_seguro
 
 from database.historico import (
     salvar_revisao,
@@ -95,7 +96,7 @@ def coletar_parametros():
 
     query_geral = st.text_area(
         "Estratégia de busca / query geral",
-        value=f'("{tema}") AND ("review" OR "systematic review" OR "scoping review")'
+        value=f'("{limpar_nome_arquivo(tema)}") AND ("review" OR "systematic review" OR "scoping review")'
     )
 
     col1, col2, col3 = st.columns(3)

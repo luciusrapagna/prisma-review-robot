@@ -1,35 +1,52 @@
 
 DescriAAo sugerida para figura PRISMA:
 
-Fluxograma representando o processo de identificaAAo, triagem, elegibilidade e inclusAo dos estudos da revisAo intitulada "dengue".
+Fluxograma representando o processo de identificaAAo, triagem, elegibilidade e inclusAo dos estudos da revisAo intitulada "Clinical studies evaluating the safety, efficacy, and use of dermocosmetic products in children, including moisturizers, cleansers, sunscreens, and topical skincare formulations for healthy skin or pediatric dermatological conditions".
 
-A busca bibliogrAfica foi realizada nas bases PubMed, Crossref, SciELO e LILACS/BVS, considerando publicaAAes entre 2014 e 2026.
+A busca bibliogrAfica foi realizada nas bases PubMed, Crossref, SciELO e LILACS/BVS, considerando publicaAAes entre 2016 e 2026.
 
 A estratAgia de busca utilizada foi:
 
 (
-"dengue"[Title/Abstract]
+child*[Title/Abstract] OR children[Title/Abstract] OR pediatric*[Title/Abstract] OR paediatric*[Title/Abstract]
+OR infant*[Title/Abstract] OR newborn*[Title/Abstract] OR adolescent*[Title/Abstract]
+OR "Child"[Mesh] OR "Infant"[Mesh] OR "Adolescent"[Mesh] OR "Pediatrics"[Mesh]
 )
 AND
 (
-"systematic review"[Title/Abstract] OR "meta-analysis"[Title/Abstract] OR review[Publication Type]
+dermocosmetic*[Title/Abstract] OR dermo-cosmetic*[Title/Abstract] OR cosmeceutical*[Title/Abstract]
+OR cosmetic*[Title/Abstract] OR "skin care"[Title/Abstract] OR "skin care product*"[Title/Abstract]
+OR moisturizer*[Title/Abstract] OR moisturiser*[Title/Abstract] OR emollient*[Title/Abstract]
+OR sunscreen*[Title/Abstract] OR "topical product*"[Title/Abstract]
+OR "Cosmetics"[Mesh] OR "Skin Care"[Mesh] OR "Sunscreening Agents"[Mesh] OR "Emollients"[Mesh]
 )
-NOT
+AND
 (
+adverse[Title/Abstract] OR harmful[Title/Abstract] OR toxicity[Title/Abstract] OR toxic*[Title/Abstract]
+OR irritation[Title/Abstract] OR dermatitis[Title/Abstract] OR allergy[Title/Abstract] OR allergic[Title/Abstract]
+OR hypersensitivity[Title/Abstract] OR "skin reaction*"[Title/Abstract] OR "adverse effect*"[Title/Abstract]
+OR "Adverse Drug Reaction Reporting Systems"[Mesh] OR "Dermatitis"[Mesh] OR "Hypersensitivity"[Mesh]
+)
+AND
+(
+review[Title/Abstract] OR "observational study"[Title/Abstract]
+OR cohort[Title/Abstract] OR "cross-sectional"[Title/Abstract]
+)
+NOT (
 animals[Mesh] NOT humans[Mesh]
 )
 
 Na etapa de identificaAAo, foram recuperados:
-- PubMed: 30 registros;
-- Crossref: 30 registros;
+- PubMed: 558 registros;
+- Crossref: 1000 registros;
 - SciELO: 0 registros;
 - LILACS/BVS: 0 registros.
 
-O total inicial identificado foi de 60 registros.
+O total inicial identificado foi de 1558 registros.
 
-ApAs a remoAAo automAtica de duplicatas, permaneceram 60 registros Anicos. Foram removidos 0 registros duplicados.
+ApAs a remoAAo automAtica de duplicatas, permaneceram 1550 registros Anicos. Foram removidos 8 registros duplicados.
 
-ApAs a triagem semAntica automatizada, utilizando similaridade mAnima de 0.35, permaneceram 20 registros. Foram excluAdos 40 registros por baixa similaridade com o tema da revisAo.
+ApAs a triagem semAntica automatizada, utilizando similaridade mAnima de 0.6, permaneceram 74 registros. Foram excluAdos 1476 registros por baixa similaridade com o tema da revisAo.
 
 A figura PRISMA deverA apresentar:
 1. registros identificados em cada base;

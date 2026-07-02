@@ -14,14 +14,14 @@
 <title>A</title>
 <path fill="white" stroke="black" d="M461,-260C461,-260 333,-260 333,-260 327,-260 321,-254 321,-248 321,-248 321,-234 321,-234 321,-228 327,-222 333,-222 333,-222 461,-222 461,-222 467,-222 473,-228 473,-234 473,-234 473,-248 473,-248 473,-254 467,-260 461,-260"/>
 <text text-anchor="middle" x="397" y="-244.8" font-family="Arial" font-size="14.00">Registros identificados</text>
-<text text-anchor="middle" x="397" y="-229.8" font-family="Arial" font-size="14.00">Total = 60</text>
+<text text-anchor="middle" x="397" y="-229.8" font-family="Arial" font-size="14.00">Total = 1558</text>
 </g>
 <!-- B -->
 <g id="node2" class="node">
 <title>B</title>
 <path fill="white" stroke="black" d="M377.5,-186C377.5,-186 154.5,-186 154.5,-186 148.5,-186 142.5,-180 142.5,-174 142.5,-174 142.5,-160 142.5,-160 142.5,-154 148.5,-148 154.5,-148 154.5,-148 377.5,-148 377.5,-148 383.5,-148 389.5,-154 389.5,-160 389.5,-160 389.5,-174 389.5,-174 389.5,-180 383.5,-186 377.5,-186"/>
 <text text-anchor="middle" x="266" y="-170.8" font-family="Arial" font-size="14.00">Registros após remoção de duplicatas</text>
-<text text-anchor="middle" x="266" y="-155.8" font-family="Arial" font-size="14.00">Total = 60</text>
+<text text-anchor="middle" x="266" y="-155.8" font-family="Arial" font-size="14.00">Total = 1550</text>
 </g>
 <!-- A&#45;&gt;B -->
 <g id="edge1" class="edge">
@@ -34,7 +34,7 @@
 <title>C</title>
 <path fill="white" stroke="black" d="M638,-186C638,-186 420,-186 420,-186 414,-186 408,-180 408,-174 408,-174 408,-160 408,-160 408,-154 414,-148 420,-148 420,-148 638,-148 638,-148 644,-148 650,-154 650,-160 650,-160 650,-174 650,-174 650,-180 644,-186 638,-186"/>
 <text text-anchor="middle" x="529" y="-170.8" font-family="Arial" font-size="14.00">Registros removidos como duplicatas</text>
-<text text-anchor="middle" x="529" y="-155.8" font-family="Arial" font-size="14.00">Total = 0</text>
+<text text-anchor="middle" x="529" y="-155.8" font-family="Arial" font-size="14.00">Total = 8</text>
 </g>
 <!-- A&#45;&gt;C -->
 <g id="edge2" class="edge">
@@ -47,7 +47,7 @@
 <title>D</title>
 <path fill="white" stroke="black" d="M404,-112C404,-112 128,-112 128,-112 122,-112 116,-106 116,-100 116,-100 116,-86 116,-86 116,-80 122,-74 128,-74 128,-74 404,-74 404,-74 410,-74 416,-80 416,-86 416,-86 416,-100 416,-100 416,-106 410,-112 404,-112"/>
 <text text-anchor="middle" x="266" y="-96.8" font-family="Arial" font-size="14.00">Registros avaliados por similaridade semântica</text>
-<text text-anchor="middle" x="266" y="-81.8" font-family="Arial" font-size="14.00">Total = 60</text>
+<text text-anchor="middle" x="266" y="-81.8" font-family="Arial" font-size="14.00">Total = 1550</text>
 </g>
 <!-- B&#45;&gt;D -->
 <g id="edge3" class="edge">
@@ -60,7 +60,7 @@
 <title>E</title>
 <path fill="white" stroke="black" d="M258,-38C258,-38 12,-38 12,-38 6,-38 0,-32 0,-26 0,-26 0,-12 0,-12 0,-6 6,0 12,0 12,0 258,0 258,0 264,0 270,-6 270,-12 270,-12 270,-26 270,-26 270,-32 264,-38 258,-38"/>
 <text text-anchor="middle" x="135" y="-22.8" font-family="Arial" font-size="14.00">Registros excluídos por baixa similaridade</text>
-<text text-anchor="middle" x="135" y="-7.8" font-family="Arial" font-size="14.00">Total = 40</text>
+<text text-anchor="middle" x="135" y="-7.8" font-family="Arial" font-size="14.00">Total = 1476</text>
 </g>
 <!-- D&#45;&gt;E -->
 <g id="edge4" class="edge">
@@ -73,7 +73,7 @@
 <title>F</title>
 <path fill="white" stroke="black" d="M493.5,-38C493.5,-38 300.5,-38 300.5,-38 294.5,-38 288.5,-32 288.5,-26 288.5,-26 288.5,-12 288.5,-12 288.5,-6 294.5,0 300.5,0 300.5,0 493.5,0 493.5,0 499.5,0 505.5,-6 505.5,-12 505.5,-12 505.5,-26 505.5,-26 505.5,-32 499.5,-38 493.5,-38"/>
 <text text-anchor="middle" x="397" y="-22.8" font-family="Arial" font-size="14.00">Estudos incluídos na síntese final</text>
-<text text-anchor="middle" x="397" y="-7.8" font-family="Arial" font-size="14.00">Total = 20</text>
+<text text-anchor="middle" x="397" y="-7.8" font-family="Arial" font-size="14.00">Total = 74</text>
 </g>
 <!-- D&#45;&gt;F -->
 <g id="edge5" class="edge">

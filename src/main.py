@@ -372,7 +372,80 @@ def executar_buscas(parametros):
     return artigos_pubmed, artigos_crossref, artigos_scielo, artigos_lilacs
 
 
+
+# ============================================================
+# SIDEBAR — SOBRE / COMO CITAR O ATHENA PRISMA
+# ============================================================
+
+def render_sobre_athena_prisma():
+    import streamlit as st
+
+    citacao_abnt = """RAPAGNÃ, Luciano C. ATHENA PRISMA Review Robot: software para automação de revisões sistemáticas e revisões de escopo. Versão 1.1.0. Zenodo, 2026. DOI: 10.5281/zenodo.21138979."""
+
+    citacao_bibtex = """@software{Rapagna2026ATHENAPRISMA,
+  author = {Rapagnã, Luciano C.},
+  title = {ATHENA PRISMA Review Robot: software para automação de revisões sistemáticas e revisões de escopo},
+  version = {1.1.0},
+  year = {2026},
+  publisher = {Zenodo},
+  doi = {10.5281/zenodo.21138979},
+  url = {https://doi.org/10.5281/zenodo.21138979}
+}"""
+
+    citacao_ris = """TY  - COMP
+AU  - Rapagnã, Luciano C.
+TI  - ATHENA PRISMA Review Robot: software para automação de revisões sistemáticas e revisões de escopo
+PY  - 2026
+PB  - Zenodo
+DO  - 10.5281/zenodo.21138979
+UR  - https://doi.org/10.5281/zenodo.21138979
+ET  - Version 1.1.0
+ER  -"""
+
+    with st.sidebar.expander("📚 Sobre / Como citar", expanded=False):
+        st.markdown("### 🧬 ATHENA PRISMA Review Robot")
+        st.markdown("**Versão:** 1.1.0")
+        st.markdown("**DOI:** 10.5281/zenodo.21138979")
+        st.markdown("[🔗 Zenodo](https://doi.org/10.5281/zenodo.21138979)")
+        st.markdown("[💻 GitHub](https://github.com/luciusrapagna/prisma-review-robot)")
+        st.markdown("**Licença:** MIT")
+
+        st.markdown("---")
+        st.markdown("**Citação recomendada:**")
+        st.code(citacao_abnt, language="text")
+
+        st.download_button(
+            "📥 Citação TXT",
+            data=citacao_abnt,
+            file_name="ATHENA_PRISMA_citacao_ABNT.txt",
+            mime="text/plain",
+            key="sidebar_citacao_txt"
+        )
+
+        st.download_button(
+            "📥 BibTeX",
+            data=citacao_bibtex,
+            file_name="ATHENA_PRISMA_citacao.bib",
+            mime="text/plain",
+            key="sidebar_citacao_bibtex"
+        )
+
+        st.download_button(
+            "📥 RIS",
+            data=citacao_ris,
+            file_name="ATHENA_PRISMA_citacao.ris",
+            mime="text/plain",
+            key="sidebar_citacao_ris"
+        )
+
+        st.caption(
+            "Cite o software para garantir rastreabilidade metodológica, "
+            "reprodutibilidade da revisão e reconhecimento acadêmico da ferramenta."
+        )
+
+
 def main():
+    render_sobre_athena_prisma()
     criar_pastas()
 
     parametros = coletar_parametros()
@@ -605,6 +678,53 @@ def main():
                     key=f"download_individual_execucao_{nome}"
                 )
 
+
+
+
+    # ============================================================
+    # COMO CITAR O ATHENA PRISMA
+    # ============================================================
+
+    st.divider()
+    st.subheader("📚 Como citar o ATHENA PRISMA")
+
+    st.info(
+        """
+Se o ATHENA PRISMA Review Robot contribuiu para o desenvolvimento da sua revisão sistemática,
+revisão de escopo ou outro estudo de síntese de evidências, recomendamos citar o software
+na seção de metodologia ou nas referências do manuscrito.
+        """
+    )
+
+    citacao_athena = """RAPAGNÃ, Luciano C. ATHENA PRISMA Review Robot: software para automação de revisões sistemáticas e revisões de escopo. Versão 1.1.0. Zenodo, 2026. DOI: 10.5281/zenodo.21138979."""
+
+    st.code(citacao_athena, language="text")
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        st.download_button(
+            "📥 Baixar referência (.txt)",
+            data=citacao_athena,
+            file_name="ATHENA_PRISMA_citacao.txt",
+            mime="text/plain",
+            key="download_citacao_athena"
+        )
+
+    with col2:
+        st.markdown(
+            """
+**DOI**
+
+https://doi.org/10.5281/zenodo.21138979
+            """
+        )
+
+    st.caption(
+        "Ao utilizar o ATHENA PRISMA em artigos científicos, dissertações, teses ou outras publicações, "
+        "a citação do software contribui para a rastreabilidade metodológica, a reprodutibilidade das análises "
+        "e o reconhecimento acadêmico da ferramenta."
+    )
 
 
 if __name__ == "__main__":

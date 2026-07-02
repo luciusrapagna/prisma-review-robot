@@ -44,7 +44,7 @@ async def buscar_crossref_async(query, ano_inicial, ano_final, max_artigos=30):
 
 
 def buscar_pubmed_sync(query, ano_inicial, ano_final, max_artigos=30):
-    termo = f'({query}) AND ("{ano_inicial}"[Date - Publication] : "{ano_final}"[Date - Publication])'
+    termo = f'({limpar_nome_arquivo(query)}) AND ("{ano_inicial}"[Date - Publication] : "{ano_final}"[Date - Publication])'
 
     handle = Entrez.esearch(
         db="pubmed",
