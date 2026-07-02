@@ -1,3 +1,4 @@
+from src.utils.nomes_arquivos import limpar_nome_arquivo, caminho_saida_seguro
 import requests
 import xml.etree.ElementTree as ET
 import pandas as pd
@@ -9,123 +10,199 @@ BASE_URL = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils"
 
 
 def buscar_pmids_pubmed(query, ano_inicial, ano_final, max_artigos=50):
-    url = f"{BASE_URL}/esearch.fcgi"
+    import requests
+    import time
 
-    parametros = {
+    url = f"{BASE_URL}/esearch.fcgi"
+    todos_pmids = []
+    lote = 500
+
+    # Primeiro: descobrir total encontrado
+    parametros_count = {
         "db": "pubmed",
         "term": query,
-        "retmax": max_artigos,
+        "retmax": 0,
         "retmode": "json",
         "mindate": ano_inicial,
         "maxdate": ano_final,
-        "datetype": "pdat"
+        "datetype": "pdat",
+        "sort": "pub_date"
     }
 
-    resposta = requests.get(url, params=parametros, timeout=30)
+    resposta = requests.get(url, params=parametros_count, timeout=30)
     resposta.raise_for_status()
-
     dados = resposta.json()
-    pmids = dados.get("esearchresult", {}).get("idlist", [])
 
-    return pmids
+    total_encontrado = int(dados.get("esearchresult", {}).get("count", 0))
+    limite = min(int(max_artigos), total_encontrado)
+
+    print(f"PubMed total encontrado: {total_encontrado}")
+    print(f"PubMed limite para download: {limite}")
+
+    for inicio in range(0, limite, lote):
+        retmax_lote = min(lote, limite - inicio)
+
+        parametros = {
+            "db": "pubmed",
+            "term": query,
+            "retmax": retmax_lote,
+            "retstart": inicio,
+            "retmode": "json",
+            "mindate": ano_inicial,
+            "maxdate": ano_final,
+            "datetype": "pdat",
+            "sort": "pub_date"
+        }
+
+        resposta = requests.get(url, params=parametros, timeout=30)
+        resposta.raise_for_status()
+
+        dados = resposta.json()
+        pmids = dados.get("esearchresult", {}).get("idlist", [])
+
+        todos_pmids.extend(pmids)
+
+        print(f"PubMed lote {inicio}–{inicio + retmax_lote}: {len(pmids)} PMIDs")
+
+        time.sleep(0.34)
+
+    # Remove duplicados preservando ordem
+    vistos = set()
+    pmids_unicos = []
+    for pmid in todos_pmids:
+        if pmid not in vistos:
+            vistos.add(pmid)
+            pmids_unicos.append(pmid)
+
+    print(f"PubMed PMIDs únicos coletados: {len(pmids_unicos)}")
+
+    return pmids_unicos
 
 
-def baixar_detalhes_pubmed(pmids):
+def baixar_detalhes_pubmed(pmids, lote=100):
+    import requests
+    import xml.etree.ElementTree as ET
+    import time
+
     if not pmids:
         return []
 
+    artigos = []
     url = f"{BASE_URL}/efetch.fcgi"
 
-    parametros = {
-        "db": "pubmed",
-        "id": ",".join(pmids),
-        "retmode": "xml"
-    }
+    for inicio in range(0, len(pmids), lote):
+        grupo = pmids[inicio:inicio + lote]
 
-    resposta = requests.get(url, params=parametros, timeout=30)
-    resposta.raise_for_status()
+        parametros = {
+            "db": "pubmed",
+            "id": ",".join(grupo),
+            "retmode": "xml"
+        }
 
-    raiz = ET.fromstring(resposta.content)
+        resposta = requests.post(url, data=parametros, timeout=60)
+        resposta.raise_for_status()
 
-    artigos = []
+        raiz = ET.fromstring(resposta.content)
 
-    for artigo in raiz.findall(".//PubmedArticle"):
-        medline = artigo.find("MedlineCitation")
-        article = medline.find("Article") if medline is not None else None
+        for artigo in raiz.findall(".//PubmedArticle"):
+            medline = artigo.find("MedlineCitation")
+            article = medline.find("Article") if medline is not None else None
 
-        pmid = medline.findtext("PMID") if medline is not None else ""
+            pmid = medline.findtext("PMID") if medline is not None else ""
+            titulo = article.findtext("ArticleTitle") if article is not None else ""
 
-        titulo = article.findtext("ArticleTitle") if article is not None else ""
+            abstract_partes = []
+            if article is not None:
+                for parte in article.findall(".//AbstractText"):
+                    if parte.text:
+                        abstract_partes.append(parte.text)
 
-        abstract_partes = []
-        if article is not None:
-            for parte in article.findall(".//AbstractText"):
-                if parte.text:
-                    abstract_partes.append(parte.text)
+            resumo = " ".join(abstract_partes)
 
-        resumo = " ".join(abstract_partes)
+            journal = ""
+            ano = ""
 
-        journal = ""
-        ano = ""
+            if article is not None:
+                journal = article.findtext(".//Journal/Title") or ""
+                pub_date = article.find(".//JournalIssue/PubDate")
+                if pub_date is not None:
+                    ano = pub_date.findtext("Year") or pub_date.findtext("MedlineDate") or ""
 
-        if article is not None:
-            journal = article.findtext(".//Journal/Title") or ""
+            autores_lista = []
+            if article is not None:
+                for autor in article.findall(".//Author"):
+                    sobrenome = autor.findtext("LastName")
+                    iniciais = autor.findtext("Initials")
 
-            pub_date = article.find(".//JournalIssue/PubDate")
-            if pub_date is not None:
-                ano = pub_date.findtext("Year") or pub_date.findtext("MedlineDate") or ""
+                    if sobrenome:
+                        if iniciais:
+                            autores_lista.append(f"{sobrenome} {iniciais}")
+                        else:
+                            autores_lista.append(sobrenome)
 
-        autores_lista = []
-        if article is not None:
-            for autor in article.findall(".//Author"):
-                sobrenome = autor.findtext("LastName")
-                iniciais = autor.findtext("Initials")
+            autores = "; ".join(autores_lista)
 
-                if sobrenome:
-                    if iniciais:
-                        autores_lista.append(f"{sobrenome} {iniciais}")
-                    else:
-                        autores_lista.append(sobrenome)
+            doi = ""
+            for id_artigo in artigo.findall(".//ArticleId"):
+                if id_artigo.attrib.get("IdType") == "doi":
+                    doi = id_artigo.text or ""
 
-        autores = "; ".join(autores_lista)
+            link = f"https://pubmed.ncbi.nlm.nih.gov/{pmid}/" if pmid else ""
 
-        doi = ""
-        for id_artigo in artigo.findall(".//ArticleId"):
-            if id_artigo.attrib.get("IdType") == "doi":
-                doi = id_artigo.text or ""
+            artigos.append({
+                "Base": "PubMed",
+                "PMID": pmid,
+                "Titulo": titulo,
+                "Autores": autores,
+                "Ano": ano,
+                "Revista": journal,
+                "DOI": doi,
+                "Resumo": resumo,
+                "Link": link
+            })
 
-        link = f"https://pubmed.ncbi.nlm.nih.gov/{pmid}/" if pmid else ""
+        print(f"PubMed detalhes {inicio}–{inicio + len(grupo)} baixados.")
 
-        artigos.append({
-            "Base": "PubMed",
-            "PMID": pmid,
-            "Titulo": titulo,
-            "Autores": autores,
-            "Ano": ano,
-            "Revista": journal,
-            "DOI": doi,
-            "Resumo": resumo,
-            "Link": link
-        })
+        time.sleep(0.34)
 
     return artigos
 
 
+def limpar_nome_arquivo_pubmed(texto, max_len=50):
+    import re
+    import unicodedata
+    import hashlib
+
+    original = str(texto or "busca_pubmed")
+
+    texto = unicodedata.normalize("NFKD", original)
+    texto = texto.encode("ascii", "ignore").decode("ascii")
+    texto = texto.lower()
+    texto = re.sub(r"[^a-z0-9]+", "_", texto)
+    texto = texto.strip("_")
+
+    if not texto:
+        texto = "busca_pubmed"
+
+    if len(texto) > max_len:
+        h = hashlib.md5(original.encode("utf-8")).hexdigest()[:8]
+        texto = texto[:max_len].rstrip("_") + "_" + h
+
+    return texto
+
+
 def salvar_resultados_pubmed(artigos, tema):
-    data_execucao = datetime.now().strftime("%Y%m%d_%H%M%S")
+    import pandas as pd
+    from pathlib import Path
+    from datetime import datetime
 
-    nome_limpo = (
-        tema.lower()
-        .replace(" ", "_")
-        .replace("/", "_")
-        .replace("\\", "_")
-        .replace(":", "_")
-    )
+    pasta = Path("outputs/tables")
+    pasta.mkdir(parents=True, exist_ok=True)
 
-    pasta_saida = Path("outputs") / "tables"
-    pasta_saida.mkdir(parents=True, exist_ok=True)
+    tema_curto = limpar_nome_arquivo_pubmed(tema, max_len=45)
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 
-    caminho_excel = pasta_saida / f"pubmed_{nome_limpo}_{data_execucao}.xlsx"
+    caminho_excel = pasta / f"pubmed_{tema_curto}_{timestamp}.xlsx"
 
     df = pd.DataFrame(artigos)
     df.to_excel(caminho_excel, index=False)

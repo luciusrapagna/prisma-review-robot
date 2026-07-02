@@ -1,3 +1,4 @@
+from src.utils.nomes_arquivos import limpar_nome_arquivo, caminho_saida_seguro
 import shutil
 import glob
 
@@ -125,7 +126,7 @@ def coletar_parametros():
     st.code(booleano_automatico, language="text")
 
     query_key = "query_geral_" + hashlib.md5(
-        f"{tema}|{tipo_revisao}".encode("utf-8")
+        f"{limpar_nome_arquivo(tema)}|{tipo_revisao}".encode("utf-8")
     ).hexdigest()
 
     query_geral = st.text_area(
@@ -461,6 +462,8 @@ def main():
         pdf_fluxo=pdf_fluxo,
     )
 
+    st.session_state["arquivos_master"] = arquivos_master
+
     salvar_revisao(
         parametros=parametros,
         total_identificados=total_identificados,
@@ -505,54 +508,102 @@ def main():
             mime="application/pdf"
         )
 
-    st.subheader("📁 Arquivos gerados")
+    st.subheader("📦 Exportações da revisão atual")
 
-    caminho_relatorio = Path(caminho_relatorio)
+    import zipfile
+    from io import BytesIO
+    from pathlib import Path
 
-    if caminho_relatorio.exists():
-        with open(caminho_relatorio, "rb") as f:
-            st.download_button(
-                "📄 Baixar relatório Word",
-                f,
-                file_name=caminho_relatorio.name,
-                mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    arquivos_execucao = {}
+
+    # Relatório Word principal
+    if "caminho_word" in locals() and caminho_word:
+        caminho = Path(caminho_word)
+        if caminho.exists():
+            arquivos_execucao["Relatório Word"] = caminho
+
+    # Fluxogramas
+    if "svg_fluxo" in locals() and svg_fluxo:
+        caminho = Path(svg_fluxo)
+        if caminho.exists():
+            arquivos_execucao["Fluxograma SVG"] = caminho
+
+    if "pdf_fluxo" in locals() and pdf_fluxo:
+        caminho = Path(pdf_fluxo)
+        if caminho.exists():
+            arquivos_execucao["Fluxograma PDF"] = caminho
+
+    # Arquivos master da execução atual
+    if "arquivos_master" in locals() and arquivos_master:
+        for nome, caminho in arquivos_master.items():
+            caminho = Path(caminho)
+            if caminho.exists() and caminho.suffix.lower() in [".xlsx", ".docx", ".svg", ".pdf", ".png", ".jpg", ".jpeg"]:
+                if "excel" in nome.lower() or caminho.suffix.lower() == ".xlsx":
+                    arquivos_execucao["Excel Master"] = caminho
+                elif "word" in nome.lower() or caminho.suffix.lower() == ".docx":
+                    arquivos_execucao["Word Tabela Artigo"] = caminho
+                elif caminho.suffix.lower() == ".svg":
+                    arquivos_execucao["Fluxograma SVG"] = caminho
+                elif caminho.suffix.lower() == ".pdf":
+                    arquivos_execucao["Fluxograma PDF"] = caminho
+                else:
+                    arquivos_execucao[nome] = caminho
+
+    if not arquivos_execucao:
+        st.warning("Nenhum arquivo da execução atual foi encontrado.")
+    else:
+        st.markdown("### Marque os arquivos que deseja baixar")
+
+        selecionados = {}
+
+        col_a, col_b = st.columns(2)
+
+        with col_a:
+            selecionar_todos = st.checkbox("Selecionar todos", value=True, key="selecionar_todos_execucao")
+
+        for nome, caminho in arquivos_execucao.items():
+            selecionados[nome] = st.checkbox(
+                nome,
+                value=selecionar_todos,
+                key=f"chk_execucao_atual_{nome}"
             )
 
-    memoria_zip = BytesIO()
+        arquivos_escolhidos = {
+            nome: caminho
+            for nome, caminho in arquivos_execucao.items()
+            if selecionados.get(nome)
+        }
 
-    with zipfile.ZipFile(memoria_zip, "w", zipfile.ZIP_DEFLATED) as zipf:
-        for pasta in ["outputs/tables", "outputs/figures", "outputs/references"]:
-            p = Path(pasta)
-            if p.exists():
-                for arquivo_saida in p.rglob("*"):
-                    if arquivo_saida.is_file():
-                        zipf.write(arquivo_saida, arquivo_saida.as_posix())
+        if arquivos_escolhidos:
+            memoria_zip = BytesIO()
 
-    memoria_zip.seek(0)
+            with zipfile.ZipFile(memoria_zip, "w", zipfile.ZIP_DEFLATED) as zipf:
+                for nome, caminho in arquivos_escolhidos.items():
+                    zipf.write(caminho, arcname=caminho.name)
 
-    st.download_button(
-        "📦 Baixar todos os arquivos gerados",
-        memoria_zip,
-        file_name="prisma_outputs.zip",
-        mime="application/zip"
-    )
+            memoria_zip.seek(0)
 
+            st.download_button(
+                label=f"📦 Baixar selecionados ({len(arquivos_escolhidos)} arquivo(s))",
+                data=memoria_zip.getvalue(),
+                file_name="ATHENA_PRISMA_revisao_atual.zip",
+                mime="application/zip",
+                key="download_revisao_atual_zip"
+            )
+        else:
+            st.info("Marque pelo menos um arquivo para liberar o download.")
 
-    st.subheader("📦 Exportação master ATHENA PRISMA")
+        st.markdown("### Downloads individuais")
 
-    for nome, caminho in arquivos_master.items():
-        caminho = Path(caminho)
-        if caminho.exists():
+        for nome, caminho in arquivos_execucao.items():
             with open(caminho, "rb") as f:
                 st.download_button(
                     label=f"⬇️ Baixar {nome}",
                     data=f,
                     file_name=caminho.name,
-                    mime="application/octet-stream"
+                    mime="application/octet-stream",
+                    key=f"download_individual_execucao_{nome}"
                 )
-
-
-
 
 
 
