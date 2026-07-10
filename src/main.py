@@ -1,4 +1,3 @@
-from src.utils.nomes_arquivos import limpar_nome_arquivo, caminho_saida_seguro
 import shutil
 import glob
 
@@ -16,6 +15,7 @@ from database.historico import (
 from exports.abnt import gerar_referencias_abnt
 
 from prisma_flow.fluxograma import gerar_fluxograma_prisma
+from prisma.filtro_qualidade import filtrar_artigos_confiaveis, deduplicar_por_melhor_registro, auditar_descartes_openalex
 
 
 import streamlit as st
@@ -81,6 +81,8 @@ from buscadores.pubmed import executar_busca_pubmed
 from buscadores.crossref import executar_busca_crossref
 from buscadores.scielo import executar_busca_scielo
 from buscadores.lilacs import executar_busca_lilacs
+from buscadores.google_scholar_seguro import salvar_orientacoes_google_scholar
+from buscadores.busca_academica_ampliada import executar_busca_academica_ampliada
 
 from prisma.duplicates import remover_duplicatas
 
@@ -126,7 +128,7 @@ def coletar_parametros():
     st.code(booleano_automatico, language="text")
 
     query_key = "query_geral_" + hashlib.md5(
-        f"{limpar_nome_arquivo(tema)}|{tipo_revisao}".encode("utf-8")
+        f"{tema}|{tipo_revisao}".encode("utf-8")
     ).hexdigest()
 
     query_geral = st.text_area(
@@ -148,8 +150,9 @@ def coletar_parametros():
 
     bases = st.multiselect(
         "Bases de dados",
-        ["PubMed", "Scopus", "Web of Science", "SciELO", "LILACS", "BVS", "Google Scholar"],
-        default=["PubMed", "SciELO", "LILACS"]
+        ["PubMed", "Scopus", "Web of Science", "SciELO", "LILACS",
+        "Google Acadêmico", "Busca Acadêmica Ampliada", "BVS"],
+        default=["PubMed", "SciELO", "LILACS", "Google Acadêmico", "Busca Acadêmica Ampliada"]
     )
 
     idioma = st.multiselect(
@@ -369,83 +372,65 @@ def executar_buscas(parametros):
         max_artigos=parametros["max_artigos"]
     )
 
-    return artigos_pubmed, artigos_crossref, artigos_scielo, artigos_lilacs
+    artigos_ampliada = []
 
-
-
-# ============================================================
-# SIDEBAR — SOBRE / COMO CITAR O ATHENA PRISMA
-# ============================================================
-
-def render_sobre_athena_prisma():
-    import streamlit as st
-
-    citacao_abnt = """RAPAGNÃ, Luciano C. ATHENA PRISMA Review Robot: software para automação de revisões sistemáticas e revisões de escopo. Versão 1.1.0. Zenodo, 2026. DOI: 10.5281/zenodo.21138979."""
-
-    citacao_bibtex = """@software{Rapagna2026ATHENAPRISMA,
-  author = {Rapagnã, Luciano C.},
-  title = {ATHENA PRISMA Review Robot: software para automação de revisões sistemáticas e revisões de escopo},
-  version = {1.1.0},
-  year = {2026},
-  publisher = {Zenodo},
-  doi = {10.5281/zenodo.21138979},
-  url = {https://doi.org/10.5281/zenodo.21138979}
-}"""
-
-    citacao_ris = """TY  - COMP
-AU  - Rapagnã, Luciano C.
-TI  - ATHENA PRISMA Review Robot: software para automação de revisões sistemáticas e revisões de escopo
-PY  - 2026
-PB  - Zenodo
-DO  - 10.5281/zenodo.21138979
-UR  - https://doi.org/10.5281/zenodo.21138979
-ET  - Version 1.1.0
-ER  -"""
-
-    with st.sidebar.expander("📚 Sobre / Como citar", expanded=False):
-        st.markdown("### 🧬 ATHENA PRISMA Review Robot")
-        st.markdown("**Versão:** 1.1.0")
-        st.markdown("**DOI:** 10.5281/zenodo.21138979")
-        st.markdown("[🔗 Zenodo](https://doi.org/10.5281/zenodo.21138979)")
-        st.markdown("[💻 GitHub](https://github.com/luciusrapagna/prisma-review-robot)")
-        st.markdown("**Licença:** MIT")
-
-        st.markdown("---")
-        st.markdown("**Citação recomendada:**")
-        st.code(citacao_abnt, language="text")
-
-        st.download_button(
-            "📥 Citação TXT",
-            data=citacao_abnt,
-            file_name="ATHENA_PRISMA_citacao_ABNT.txt",
-            mime="text/plain",
-            key="sidebar_citacao_txt"
+    if "Busca Acadêmica Ampliada" in parametros.get("bases", []):
+        artigos_ampliada = executar_busca_academica_ampliada(
+            query=parametros.get("query_geral", parametros["query_pubmed"]),
+            query_ingles=parametros.get("query_pubmed", parametros.get("query_geral")),
+            ano_inicial=parametros["ano_inicial"],
+            ano_final=parametros["ano_final"],
+            max_artigos=parametros["max_artigos"]
         )
 
-        st.download_button(
-            "📥 BibTeX",
-            data=citacao_bibtex,
-            file_name="ATHENA_PRISMA_citacao.bib",
-            mime="text/plain",
-            key="sidebar_citacao_bibtex"
-        )
+    return artigos_pubmed, artigos_crossref, artigos_scielo, artigos_lilacs, artigos_ampliada
 
-        st.download_button(
-            "📥 RIS",
-            data=citacao_ris,
-            file_name="ATHENA_PRISMA_citacao.ris",
-            mime="text/plain",
-            key="sidebar_citacao_ris"
-        )
 
-        st.caption(
-            "Cite o software para garantir rastreabilidade metodológica, "
-            "reprodutibilidade da revisão e reconhecimento acadêmico da ferramenta."
-        )
+
+
+def render_google_academico_seguro(parametros):
+    bases = parametros.get("bases", [])
+
+    if "Google Acadêmico" not in bases:
+        return
+
+    query_google = (
+        parametros.get("query_geral")
+        or parametros.get("query_latam")
+        or parametros.get("query_pubmed")
+        or parametros.get("tema")
+    )
+
+    caminho_google, link_google = salvar_orientacoes_google_scholar(
+        query=query_google,
+        ano_inicial=parametros.get("ano_inicial"),
+        ano_final=parametros.get("ano_final")
+    )
+
+    st.subheader("🔎 Google Acadêmico — busca segura")
+    st.info(
+        "O Google Acadêmico não possui API pública oficial estável. "
+        "Por isso, o ATHENA gera um link de busca seguro para abrir no navegador. "
+        "Depois, os resultados podem ser importados para auditoria, deduplicação e ranking."
+    )
+
+    st.link_button("Abrir busca no Google Acadêmico", link_google)
+
+    with open(caminho_google, "r", encoding="utf-8") as f:
+        conteudo = f.read()
+
+    st.download_button(
+        "Baixar estratégia do Google Acadêmico",
+        data=conteudo,
+        file_name="busca_google_academico_athena.txt",
+        mime="text/plain"
+    )
+
+    st.code(query_google, language="text")
+
 
 
 def main():
-    render_sobre_athena_prisma()
     criar_pastas()
 
     parametros = coletar_parametros()
@@ -453,6 +438,9 @@ def main():
     similaridade_minima = perguntar_similaridade()
 
     import streamlit as st
+
+    # Google Acadêmico — bloco seguro visível antes da execução
+    render_google_academico_seguro(parametros)
 
     executar = st.button("🚀 Executar revisão")
 
@@ -468,7 +456,8 @@ def main():
         artigos_pubmed,
         artigos_crossref,
         artigos_scielo,
-        artigos_lilacs
+        artigos_lilacs,
+        artigos_ampliada
     ) = executar_buscas(parametros)
 
     todos_artigos = (
@@ -476,17 +465,66 @@ def main():
         + artigos_crossref
         + artigos_scielo
         + artigos_lilacs
+        + artigos_ampliada
     )
 
-    salvar_tabela_consolidada(todos_artigos)
+    print("\n" + "=" * 70)
+    print("ATHENA PRISMA — DIAGNÓSTICO DAS BASES")
+    print("=" * 70)
+    print(f"Bases selecionadas na interface: {parametros.get('bases', [])}")
+    print(f"PubMed: {len(artigos_pubmed)}")
+    print(f"Crossref: {len(artigos_crossref)}")
+    print(f"SciELO: {len(artigos_scielo)}")
+    print(f"LILACS: {len(artigos_lilacs)}")
+    print(f"Busca Acadêmica Ampliada: {len(artigos_ampliada)}")
+    print(f"TOTAL BRUTO: {len(todos_artigos)}")
+
+    from collections import Counter
+    distribuicao_bases = Counter(
+        str(a.get("Base") or a.get("base") or "Não informado")
+        for a in todos_artigos
+        if isinstance(a, dict)
+    )
+    print(f"Distribuição real: {dict(distribuicao_bases)}")
+    print("=" * 70 + "\n")
+
+    artigos_confiaveis, artigos_descartados_qualidade = filtrar_artigos_confiaveis(
+        todos_artigos
+    )
+
+    try:
+        caminho_auditoria_openalex = auditar_descartes_openalex(
+            artigos_originais=todos_artigos,
+            artigos_confiaveis=artigos_confiaveis,
+            artigos_descartados=artigos_descartados_qualidade,
+            caminho="outputs/tables/auditoria_openalex_descartes.xlsx",
+        )
+        print(
+            f"Auditoria OpenAlex gerada em: "
+            f"{caminho_auditoria_openalex}"
+        )
+    except Exception as erro_openalex:
+        import traceback
+        print(
+            f"ERRO AO GERAR AUDITORIA OPENALEX: "
+            f"{erro_openalex}"
+        )
+        traceback.print_exc()
+
+    artigos_confiaveis = deduplicar_por_melhor_registro(
+        artigos_confiaveis
+    )
+
+    salvar_tabela_consolidada(artigos_confiaveis)
 
     total_pubmed = len(artigos_pubmed)
     total_crossref = len(artigos_crossref)
     total_scielo = len(artigos_scielo)
     total_lilacs = len(artigos_lilacs)
+    total_ampliada = len(artigos_ampliada)
     total_identificados = len(todos_artigos)
 
-    artigos_sem_duplicatas = remover_duplicatas(todos_artigos)
+    artigos_sem_duplicatas = remover_duplicatas(artigos_confiaveis)
 
     total_sem_duplicatas = len(artigos_sem_duplicatas)
 
@@ -528,14 +566,12 @@ def main():
     )
 
     arquivos_master = exportar_master_prisma_elegante(
-        artigos_totais=todos_artigos,
+        artigos_totais=artigos_confiaveis,
         artigos_incluidos=artigos_rankeados,
         svg_fluxo=svg_fluxo,
         jpg_fluxo=None,
         pdf_fluxo=pdf_fluxo,
     )
-
-    st.session_state["arquivos_master"] = arquivos_master
 
     salvar_revisao(
         parametros=parametros,
@@ -581,150 +617,55 @@ def main():
             mime="application/pdf"
         )
 
-    st.subheader("📦 Exportações da revisão atual")
+    st.subheader("📁 Arquivos gerados")
 
-    import zipfile
-    from io import BytesIO
-    from pathlib import Path
+    caminho_relatorio = Path(caminho_relatorio)
 
-    arquivos_execucao = {}
-
-    # Relatório Word principal
-    if "caminho_word" in locals() and caminho_word:
-        caminho = Path(caminho_word)
-        if caminho.exists():
-            arquivos_execucao["Relatório Word"] = caminho
-
-    # Fluxogramas
-    if "svg_fluxo" in locals() and svg_fluxo:
-        caminho = Path(svg_fluxo)
-        if caminho.exists():
-            arquivos_execucao["Fluxograma SVG"] = caminho
-
-    if "pdf_fluxo" in locals() and pdf_fluxo:
-        caminho = Path(pdf_fluxo)
-        if caminho.exists():
-            arquivos_execucao["Fluxograma PDF"] = caminho
-
-    # Arquivos master da execução atual
-    if "arquivos_master" in locals() and arquivos_master:
-        for nome, caminho in arquivos_master.items():
-            caminho = Path(caminho)
-            if caminho.exists() and caminho.suffix.lower() in [".xlsx", ".docx", ".svg", ".pdf", ".png", ".jpg", ".jpeg"]:
-                if "excel" in nome.lower() or caminho.suffix.lower() == ".xlsx":
-                    arquivos_execucao["Excel Master"] = caminho
-                elif "word" in nome.lower() or caminho.suffix.lower() == ".docx":
-                    arquivos_execucao["Word Tabela Artigo"] = caminho
-                elif caminho.suffix.lower() == ".svg":
-                    arquivos_execucao["Fluxograma SVG"] = caminho
-                elif caminho.suffix.lower() == ".pdf":
-                    arquivos_execucao["Fluxograma PDF"] = caminho
-                else:
-                    arquivos_execucao[nome] = caminho
-
-    if not arquivos_execucao:
-        st.warning("Nenhum arquivo da execução atual foi encontrado.")
-    else:
-        st.markdown("### Marque os arquivos que deseja baixar")
-
-        selecionados = {}
-
-        col_a, col_b = st.columns(2)
-
-        with col_a:
-            selecionar_todos = st.checkbox("Selecionar todos", value=True, key="selecionar_todos_execucao")
-
-        for nome, caminho in arquivos_execucao.items():
-            selecionados[nome] = st.checkbox(
-                nome,
-                value=selecionar_todos,
-                key=f"chk_execucao_atual_{nome}"
-            )
-
-        arquivos_escolhidos = {
-            nome: caminho
-            for nome, caminho in arquivos_execucao.items()
-            if selecionados.get(nome)
-        }
-
-        if arquivos_escolhidos:
-            memoria_zip = BytesIO()
-
-            with zipfile.ZipFile(memoria_zip, "w", zipfile.ZIP_DEFLATED) as zipf:
-                for nome, caminho in arquivos_escolhidos.items():
-                    zipf.write(caminho, arcname=caminho.name)
-
-            memoria_zip.seek(0)
-
+    if caminho_relatorio.exists():
+        with open(caminho_relatorio, "rb") as f:
             st.download_button(
-                label=f"📦 Baixar selecionados ({len(arquivos_escolhidos)} arquivo(s))",
-                data=memoria_zip.getvalue(),
-                file_name="ATHENA_PRISMA_revisao_atual.zip",
-                mime="application/zip",
-                key="download_revisao_atual_zip"
+                "📄 Baixar relatório Word",
+                f,
+                file_name=caminho_relatorio.name,
+                mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
             )
-        else:
-            st.info("Marque pelo menos um arquivo para liberar o download.")
 
-        st.markdown("### Downloads individuais")
+    memoria_zip = BytesIO()
 
-        for nome, caminho in arquivos_execucao.items():
+    with zipfile.ZipFile(memoria_zip, "w", zipfile.ZIP_DEFLATED) as zipf:
+        for pasta in ["outputs/tables", "outputs/figures", "outputs/references"]:
+            p = Path(pasta)
+            if p.exists():
+                for arquivo_saida in p.rglob("*"):
+                    if arquivo_saida.is_file():
+                        zipf.write(arquivo_saida, arquivo_saida.as_posix())
+
+    memoria_zip.seek(0)
+
+    st.download_button(
+        "📦 Baixar todos os arquivos gerados",
+        memoria_zip,
+        file_name="prisma_outputs.zip",
+        mime="application/zip"
+    )
+
+
+    st.subheader("📦 Exportação master ATHENA PRISMA")
+
+    for nome, caminho in arquivos_master.items():
+        caminho = Path(caminho)
+        if caminho.exists():
             with open(caminho, "rb") as f:
                 st.download_button(
                     label=f"⬇️ Baixar {nome}",
                     data=f,
                     file_name=caminho.name,
-                    mime="application/octet-stream",
-                    key=f"download_individual_execucao_{nome}"
+                    mime="application/octet-stream"
                 )
 
 
 
 
-    # ============================================================
-    # COMO CITAR O ATHENA PRISMA
-    # ============================================================
-
-    st.divider()
-    st.subheader("📚 Como citar o ATHENA PRISMA")
-
-    st.info(
-        """
-Se o ATHENA PRISMA Review Robot contribuiu para o desenvolvimento da sua revisão sistemática,
-revisão de escopo ou outro estudo de síntese de evidências, recomendamos citar o software
-na seção de metodologia ou nas referências do manuscrito.
-        """
-    )
-
-    citacao_athena = """RAPAGNÃ, Luciano C. ATHENA PRISMA Review Robot: software para automação de revisões sistemáticas e revisões de escopo. Versão 1.1.0. Zenodo, 2026. DOI: 10.5281/zenodo.21138979."""
-
-    st.code(citacao_athena, language="text")
-
-    col1, col2 = st.columns(2)
-
-    with col1:
-        st.download_button(
-            "📥 Baixar referência (.txt)",
-            data=citacao_athena,
-            file_name="ATHENA_PRISMA_citacao.txt",
-            mime="text/plain",
-            key="download_citacao_athena"
-        )
-
-    with col2:
-        st.markdown(
-            """
-**DOI**
-
-https://doi.org/10.5281/zenodo.21138979
-            """
-        )
-
-    st.caption(
-        "Ao utilizar o ATHENA PRISMA em artigos científicos, dissertações, teses ou outras publicações, "
-        "a citação do software contribui para a rastreabilidade metodológica, a reprodutibilidade das análises "
-        "e o reconhecimento acadêmico da ferramenta."
-    )
 
 
 if __name__ == "__main__":
@@ -771,73 +712,91 @@ def _campo_prisma(artigo, *nomes, padrao=""):
     return padrao
 
 
-def exportar_excel_master_elegante(artigos, pasta_saida="outputs"):
+def exportar_excel_master_elegante(artigos, pasta_saida="outputs", artigos_incluidos=None):
     Path(pasta_saida).mkdir(parents=True, exist_ok=True)
 
     caminho = Path(pasta_saida) / "ATHENA_PRISMA_Master.xlsx"
 
     wb = Workbook()
-    ws = wb.active
-    ws.title = "Estudos incluídos"
 
-    colunas = ["ID", "Autor", "Ano", "Título", "Revista", "DOI", "Link", "Base", "Status"]
-    ws.append(colunas)
+    def preencher_aba(ws, lista_artigos, status_padrao):
+        ws.title = ws.title[:31]
 
-    for i, artigo in enumerate(artigos, start=1):
-        autores = _campo_prisma(artigo, "autores", "authors")
-        ws.append([
-            i,
-            _autor_curto_prisma(autores),
-            _campo_prisma(artigo, "ano", "year"),
-            _campo_prisma(artigo, "titulo", "title"),
-            _campo_prisma(artigo, "revista", "journal", "fonte"),
-            _campo_prisma(artigo, "doi", "DOI"),
-            _campo_prisma(artigo, "link", "url", "pubmed_url"),
-            _campo_prisma(artigo, "base", "database", padrao="PubMed"),
-            _campo_prisma(artigo, "status", padrao="Incluído"),
-        ])
+        colunas = [
+            "ID", "Autor", "Ano", "Título", "Revista",
+            "DOI", "Link", "Base", "Status", "Similaridade"
+        ]
+        ws.append(colunas)
 
-    header_fill = PatternFill("solid", fgColor="1F4E78")
-    header_font = Font(color="FFFFFF", bold=True)
-    thin = Side(border_style="thin", color="D9E2F3")
+        for i, artigo in enumerate(lista_artigos or [], start=1):
+            autores = _campo_prisma(artigo, "Autores", "autores", "authors")
 
-    for cell in ws[1]:
-        cell.fill = header_fill
-        cell.font = header_font
-        cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
-        cell.border = Border(top=thin, left=thin, right=thin, bottom=thin)
+            ws.append([
+                i,
+                _autor_curto_prisma(autores),
+                _campo_prisma(artigo, "Ano", "ano", "year"),
+                _campo_prisma(artigo, "Titulo", "Título", "titulo", "title"),
+                _campo_prisma(artigo, "Revista", "revista", "journal", "fonte"),
+                _campo_prisma(artigo, "DOI", "doi"),
+                _campo_prisma(artigo, "Link", "link", "url", "pubmed_url"),
+                _campo_prisma(artigo, "Base", "base", "database", padrao="Sem base"),
+                _campo_prisma(artigo, "status", "Status", padrao=status_padrao),
+                _campo_prisma(
+                    artigo,
+                    "similaridade",
+                    "Similaridade",
+                    "score_similaridade",
+                    padrao=""
+                ),
+            ])
 
-    for row in ws.iter_rows(min_row=2):
-        for cell in row:
-            cell.alignment = Alignment(vertical="center", wrap_text=True)
+        header_fill = PatternFill("solid", fgColor="1F4E78")
+        header_font = Font(color="FFFFFF", bold=True)
+        thin = Side(border_style="thin", color="D9E2F3")
+
+        for cell in ws[1]:
+            cell.fill = header_fill
+            cell.font = header_font
+            cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
             cell.border = Border(top=thin, left=thin, right=thin, bottom=thin)
 
-    for row in range(2, ws.max_row + 1):
-        doi_cell = ws[f"F{row}"]
-        link_cell = ws[f"G{row}"]
+        for row in ws.iter_rows(min_row=2):
+            for cell in row:
+                cell.alignment = Alignment(vertical="center", wrap_text=True)
+                cell.border = Border(top=thin, left=thin, right=thin, bottom=thin)
 
-        if doi_cell.value:
-            doi_cell.hyperlink = f"https://doi.org/{doi_cell.value}"
-            doi_cell.style = "Hyperlink"
+        for row in range(2, ws.max_row + 1):
+            doi_cell = ws[f"F{row}"]
+            link_cell = ws[f"G{row}"]
 
-        if link_cell.value:
-            link_cell.hyperlink = str(link_cell.value)
-            link_cell.style = "Hyperlink"
+            if doi_cell.value:
+                doi_cell.hyperlink = f"https://doi.org/{doi_cell.value}"
+                doi_cell.style = "Hyperlink"
 
-    ws.freeze_panes = "A2"
-    ws.auto_filter.ref = ws.dimensions
+            if link_cell.value:
+                link_cell.hyperlink = str(link_cell.value)
+                link_cell.style = "Hyperlink"
 
-    for col in ws.columns:
-        max_length = 0
-        col_letter = get_column_letter(col[0].column)
-        for cell in col:
-            value = str(cell.value) if cell.value else ""
-            max_length = max(max_length, len(value))
-        ws.column_dimensions[col_letter].width = min(max_length + 3, 60)
+        ws.freeze_panes = "A2"
+
+        larguras = {
+            "A": 8, "B": 22, "C": 10, "D": 70, "E": 35,
+            "F": 28, "G": 45, "H": 22, "I": 18, "J": 14
+        }
+
+        for col, largura in larguras.items():
+            ws.column_dimensions[col].width = largura
+
+    ws1 = wb.active
+    ws1.title = "Identificados"
+    preencher_aba(ws1, artigos, "Identificado")
+
+    ws2 = wb.create_sheet("Incluídos após triagem")
+    preencher_aba(ws2, artigos_incluidos if artigos_incluidos is not None else artigos, "Incluído")
 
     wb.save(caminho)
-    return str(caminho)
 
+    return caminho
 
 def exportar_word_tabela_artigo(artigos, pasta_saida="outputs"):
     Path(pasta_saida).mkdir(parents=True, exist_ok=True)
@@ -897,7 +856,10 @@ def exportar_word_tabela_artigo(artigos, pasta_saida="outputs"):
 def exportar_master_prisma(artigos_totais, artigos_incluidos, svg_fluxo=None, jpg_fluxo=None, pdf_fluxo=None):
     arquivos = {}
 
-    arquivos["excel_master"] = exportar_excel_master_elegante(artigos_incluidos)
+    arquivos["excel_master"] = exportar_excel_master_elegante(
+        artigos_totais,
+        artigos_incluidos=artigos_incluidos
+    )
     arquivos["word_tabela_artigo"] = exportar_word_tabela_artigo(artigos_incluidos)
 
     if svg_fluxo:
