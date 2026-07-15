@@ -91,7 +91,7 @@ from ia.ranking_semantico import (
     salvar_ranking_semantico
 )
 
-from ia.gerador_booleano import gerar_booleano
+from engines.motor_booleano_master import gerar_estrategias
 
 from outputs.word_writer import gerar_relatorio_word
 
@@ -122,21 +122,76 @@ def coletar_parametros():
         index=1
     )
 
-    booleano_automatico = gerar_booleano(tema, tipo_revisao)
+    estrategias = gerar_estrategias(
+        tema=tema,
+        tipo_revisao=tipo_revisao,
+    )
 
-    st.caption("Booleano automático ATHENA gerado a partir do tema e do tipo de revisão:")
-    st.code(booleano_automatico, language="text")
+    query_pubmed_automatica = estrategias["query_pubmed"]
+    query_scielo_automatica = estrategias["query_scielo"]
+    query_lilacs_automatica = estrategias["query_lilacs"]
+    query_geral_automatica = estrategias["query_geral"]
 
-    query_key = "query_geral_" + hashlib.md5(
+    st.caption(
+        "Estratégias automáticas geradas pelo Motor Booleano "
+        "Master ATHENA."
+    )
+
+    aba_pubmed, aba_latam, aba_geral = st.tabs(
+        ["PubMed", "SciELO/LILACS", "Busca geral"]
+    )
+
+    chave_base = hashlib.md5(
         f"{tema}|{tipo_revisao}".encode("utf-8")
     ).hexdigest()
 
-    query_geral = st.text_area(
-        "Estratégia de busca / query geral",
-        value=booleano_automatico,
-        height=260,
-        key=query_key
+    with aba_pubmed:
+        query_pubmed = st.text_area(
+            "Estratégia PubMed",
+            value=query_pubmed_automatica,
+            height=300,
+            key=f"query_pubmed_{chave_base}",
+        )
+
+    with aba_latam:
+        query_scielo = st.text_area(
+            "Estratégia SciELO",
+            value=query_scielo_automatica,
+            height=300,
+            key=f"query_scielo_{chave_base}",
+        )
+
+        query_lilacs = st.text_area(
+            "Estratégia LILACS/BVS",
+            value=query_lilacs_automatica,
+            height=300,
+            key=f"query_lilacs_{chave_base}",
+        )
+
+    with aba_geral:
+        query_geral = st.text_area(
+            "Estratégia de busca geral",
+            value=query_geral_automatica,
+            height=300,
+            key=f"query_geral_{chave_base}",
+        )
+
+    relatorio_motor = estrategias.get("relatorio", {})
+    conceitos_motor = relatorio_motor.get(
+        "conceitos_identificados",
+        [],
     )
+
+    if conceitos_motor:
+        st.info(
+            "Conceitos identificados: "
+            + ", ".join(conceitos_motor)
+        )
+    else:
+        st.warning(
+            "Nenhum conceito do vocabulário interno foi identificado. "
+            "O motor aplicou uma estratégia conservadora baseada no tema."
+        )
 
     col1, col2, col3 = st.columns(3)
     with col1:
@@ -171,9 +226,9 @@ def coletar_parametros():
         "tema": tema,
         "tipo_revisao": tipo_revisao,
         "query_geral": query_geral,
-        "query_pubmed": query_geral,
-        "query_scielo": query_geral,
-        "query_lilacs": query_geral,
+        "query_pubmed": query_pubmed,
+        "query_scielo": query_scielo,
+        "query_lilacs": query_lilacs,
         "ano_inicial": int(ano_inicial),
         "ano_final": int(ano_final),
         "max_artigos": int(max_artigos),
